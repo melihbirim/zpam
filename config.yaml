@@ -1,0 +1,109 @@
+# ZPO Spam Filter Configuration
+# This file allows customization without code changes
+
+detection:
+  spam_threshold: 4  # Emails scoring 4-5 are moved to spam
+  
+  weights:
+    subject_keywords: 3.0
+    body_keywords: 2.0
+    caps_ratio: 1.5
+    exclamation_ratio: 1.0
+    url_density: 2.5
+    html_ratio: 1.0
+    suspicious_headers: 2.0
+    attachment_risk: 1.5
+    domain_reputation: 3.0
+    encoding_issues: 1.0
+    from_to_mismatch: 2.0
+    subject_length: 0.5
+    frequency_penalty: 2.0
+  
+  keywords:
+    high_risk:
+      - "free money"
+      - "get rich quick"
+      - "make money fast"
+      - "guaranteed income"
+      - "no risk"
+      - "act now"
+      - "limited time"
+      - "urgent"
+      - "congratulations"
+      - "you have won"
+      - "lottery"
+      - "inheritance"
+      - "nigerian prince"
+      - "viagra"
+      - "cialis"
+      - "pharmacy"
+      - "prescription"
+    
+    medium_risk:
+      - "click here"
+      - "visit our website"
+      - "special offer"
+      - "discount"
+      - "save money"
+      - "credit"
+      - "loan"
+      - "mortgage"
+      - "insurance"
+      - "weight loss"
+      - "diet"
+      - "lose weight"
+      - "earn extra"
+    
+    low_risk:
+      - "free"
+      - "offer"
+      - "deal"
+      - "sale"
+      - "promotion"
+      - "bonus"
+      - "gift"
+      - "prize"
+      - "winner"
+      - "selected"
+      - "opportunity"
+  
+  features:
+    keyword_detection: true
+    header_analysis: true
+    attachment_scan: true
+    domain_check: true
+    frequency_tracking: true
+    learning_mode: false
+
+lists:
+  # Whitelist - these emails/domains are always trusted
+  whitelist_emails: []
+  whitelist_domains: []
+  
+  # Blacklist - these emails/domains are always spam
+  blacklist_emails: []
+  blacklist_domains: []
+  
+  # Trusted domains - reputable email providers
+  trusted_domains:
+    - "gmail.com"
+    - "yahoo.com"
+    - "outlook.com"
+    - "hotmail.com"
+    - "apple.com"
+    - "microsoft.com"
+    - "google.com"
+    - "amazon.com"
+
+performance:
+  max_concurrent_emails: 10
+  timeout_ms: 5000
+  cache_size: 1000
+  batch_size: 100
+
+logging:
+  level: "info"  # debug, info, warn, error
+  file: ""       # empty = stdout
+  format: "text" # text or json
+  max_size_mb: 10
+  max_backups: 3 
