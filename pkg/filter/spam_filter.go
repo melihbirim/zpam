@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/zpo/spam-filter/pkg/config"
 	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpo/spam-filter/pkg/headers"
 	"github.com/zpo/spam-filter/pkg/learning"
 	"github.com/zpo/spam-filter/pkg/tracker"
 )
@@ -23,9 +25,10 @@ type FilterResults struct {
 // SpamFilter implements the ZPO spam detection algorithm
 type SpamFilter struct {
 	parser   *email.Parser
-	config   *config.Config
-	tracker  *tracker.FrequencyTracker
-	learner  *learning.WordFrequency
+	config    *config.Config
+	tracker   *tracker.FrequencyTracker
+	learner   *learning.WordFrequency
+	validator *headers.Validator
 	
 	// Legacy fields for backward compatibility
 	keywords SpamKeywords
@@ -62,6 +65,9 @@ type FeatureWeights struct {
 	
 	// Learning weights
 	WordFrequency     float64
+	
+	// Header validation weights
+	HeaderValidation float64
 }
 
 // NewSpamFilter creates a new spam filter with default configuration
@@ -78,6 +84,32 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 		tracker:  tracker.NewFrequencyTracker(60, cfg.Performance.CacheSize), // 60 minute window
 		keywords: convertConfigKeywords(cfg.Detection.Keywords),
 		weights:  convertConfigWeights(cfg.Detection.Weights),
+	}
+	
+	// Initialize headers validator
+	if cfg.Headers.EnableSPF || cfg.Headers.EnableDKIM || cfg.Headers.EnableDMARC {
+		headersConfig := &headers.Config{
+			EnableSPF:             cfg.Headers.EnableSPF,
+			EnableDKIM:            cfg.Headers.EnableDKIM,
+			EnableDMARC:           cfg.Headers.EnableDMARC,
+			DNSTimeout:            time.Duration(cfg.Headers.DNSTimeoutMs) * time.Millisecond,
+			MaxHopCount:           cfg.Headers.MaxHopCount,
+			SuspiciousServerScore: cfg.Headers.SuspiciousServerScore,
+			CacheSize:             cfg.Headers.CacheSize,
+			CacheTTL:              time.Duration(cfg.Headers.CacheTTLMin) * time.Minute,
+		}
+		
+		// Use default suspicious patterns
+		headersConfig.SuspiciousServers = []string{
+			"suspicious", "spam", "bulk", "mass", "marketing",
+			"promo", "offer", "deal", "free", "win",
+		}
+		headersConfig.OpenRelayPatterns = []string{
+			"unknown", "dynamic", "dhcp", "dial", "cable",
+			"dsl", "adsl", "pool", "client", "user",
+		}
+		
+		sf.validator = headers.NewValidator(headersConfig)
 	}
 	
 	// Initialize word frequency learner if enabled
@@ -239,6 +271,11 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 	// Frequency scoring (if enabled)
 	if sf.config == nil || sf.config.Detection.Features.FrequencyTracking {
 		score += sf.scoreFrequency(email.From, domain)
+	}
+	
+	// Headers validation scoring (if enabled)
+	if sf.validator != nil {
+		score += sf.scoreHeaders(email.Headers)
 	}
 	
 	return score
@@ -469,6 +506,7 @@ func getOptimizedWeights() FeatureWeights {
 		SubjectLength:    0.5,
 		FrequencyPenalty: 2.0,
 		WordFrequency:    2.0,
+		HeaderValidation: 2.5,
 	}
 }
 
@@ -498,6 +536,7 @@ func convertConfigWeights(configWeights config.FeatureWeights) FeatureWeights {
 		SubjectLength:     configWeights.SubjectLength,
 		FrequencyPenalty:  configWeights.FrequencyPenalty,
 		WordFrequency:     configWeights.WordFrequency,
+		HeaderValidation:  configWeights.HeaderValidation,
 	}
 }
 
@@ -548,4 +587,68 @@ func (sf *SpamFilter) scoreLearning(subject, body string) float64 {
 	}
 	
 	return 0
+}
+
+// scoreHeaders scores based on email headers validation
+func (sf *SpamFilter) scoreHeaders(headers map[string]string) float64 {
+	if sf.validator == nil {
+		return 0
+	}
+	
+	// Validate headers
+	result := sf.validator.ValidateHeaders(headers)
+	
+	// Calculate score based on validation results
+	score := 0.0
+	
+	// Authentication score contribution (inverse scoring - lower auth score = higher spam score)
+	authScore := result.AuthScore // 0-100
+	if authScore < 50 {
+		score += (50 - authScore) * 0.2 // Max 10 points for very poor auth
+	}
+	
+	// Suspicious score contribution (direct scoring - higher suspicious score = higher spam score)
+	suspiciousScore := result.SuspiciScore // 0-100
+	score += suspiciousScore * 0.15 // Max 15 points for very suspicious
+	
+	// SPF failures
+	switch result.SPF.Result {
+	case "fail":
+		score += 8.0
+	case "softfail":
+		score += 4.0
+	case "temperror", "permerror":
+		score += 2.0
+	}
+	
+	// DKIM failures
+	if !result.DKIM.Valid {
+		score += 6.0
+	}
+	
+	// DMARC failures
+	if !result.DMARC.Valid {
+		score += 7.0
+	}
+	
+	// Routing anomalies
+	score += float64(len(result.Routing.SuspiciousHops)) * 3.0
+	score += float64(len(result.Routing.OpenRelays)) * 4.0
+	score += float64(len(result.Routing.ReverseDNSIssues)) * 2.0
+	
+	// Excessive routing hops
+	if result.Routing.HopCount > 10 {
+		score += float64(result.Routing.HopCount-10) * 1.0
+	}
+	
+	// Header anomalies
+	score += float64(len(result.Anomalies)) * 2.0
+	
+	// Apply weight from config
+	weight := sf.weights.HeaderValidation
+	if sf.config != nil {
+		weight = sf.config.Detection.Weights.HeaderValidation
+	}
+	
+	return score * weight
 } 

@@ -1,0 +1,28 @@
+Return-Path: <newsletter@example.org>
+Received: from mail.example.org (mail.example.org [203.0.113.10])
+	by mx.recipient.com (Postfix) with ESMTP id ABC123
+	for <user@recipient.com>; Mon, 01 Jan 2024 12:00:00 +0000 (UTC)
+From: "Weekly Newsletter" <newsletter@example.org>
+To: user@recipient.com
+Subject: Weekly Tech Updates
+Date: Mon, 01 Jan 2024 12:00:00 +0000
+Message-ID: <newsletter-20240101@example.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Hello,
+
+Here are this week's technology updates:
+
+1. New programming languages gaining popularity
+2. Cloud computing trends for 2024
+3. Best practices for software development
+
+We hope you find these updates useful!
+
+Best regards,
+Tech News Team
+newsletter@example.org
+
+--
+To unsubscribe, visit: https://example.org/unsubscribe 

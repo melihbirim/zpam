@@ -19,6 +19,7 @@ detection:
     subject_length: 0.5
     frequency_penalty: 2.0
     word_frequency: 2.0
+    header_validation: 2.5
   
   keywords:
     high_risk:
@@ -124,3 +125,16 @@ learning:
   use_header_words: false     # Learn from email headers
   max_vocabulary_size: 10000  # Maximum vocabulary size
   auto_train: false           # Automatically train on classified emails
+
+# Email headers validation settings
+headers:
+  enable_spf: true            # Enable SPF validation
+  enable_dkim: true           # Enable DKIM validation
+  enable_dmarc: true          # Enable DMARC validation
+  dns_timeout_ms: 5000        # DNS lookup timeout in milliseconds
+  max_hop_count: 15           # Maximum routing hops before suspicious
+  suspicious_server_score: 75 # Threshold for suspicious server detection
+  auth_weight: 2.0            # Weight for authentication scoring
+  suspicious_weight: 2.5      # Weight for suspicious activity scoring
+  cache_size: 1000            # Cache size for DNS lookups
+  cache_ttl_min: 60           # Cache TTL in minutes
