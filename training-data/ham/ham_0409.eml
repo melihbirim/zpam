@@ -1,0 +1,14 @@
+From: jane.doe@startup.io
+To: customer@sample.biz
+Subject: Happy birthday!
+Date: Fri, 18 Oct 2024 23:10:46 +0100
+Message-ID: <2536393944875637589@generator.local>
+
+Hello,
+
+Please find attached the quarterly report for your review. The numbers look good overall, with a 15% increase in revenue.
+
+Let me know if you have any questions.
+
+Thanks,
+Jane Doe%!(EXTRA string=Jane Doe)

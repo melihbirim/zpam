@@ -21,6 +21,9 @@ type Config struct {
 	
 	// Logging settings
 	Logging LoggingConfig `yaml:"logging"`
+	
+	// Learning settings
+	Learning LearningConfig `yaml:"learning"`
 }
 
 // DetectionConfig contains spam detection parameters
@@ -53,6 +56,7 @@ type FeatureWeights struct {
 	FromToMismatch    float64 `yaml:"from_to_mismatch"`
 	SubjectLength     float64 `yaml:"subject_length"`
 	FrequencyPenalty  float64 `yaml:"frequency_penalty"`
+	WordFrequency     float64 `yaml:"word_frequency"`
 }
 
 // KeywordLists contains spam keyword categories
@@ -103,6 +107,36 @@ type LoggingConfig struct {
 	MaxBackups int    `yaml:"max_backups"`
 }
 
+// LearningConfig contains word learning settings
+type LearningConfig struct {
+	// Enable word frequency learning
+	Enabled bool `yaml:"enabled"`
+	
+	// Model file path
+	ModelPath string `yaml:"model_path"`
+	
+	// Word processing
+	MinWordLength int `yaml:"min_word_length"`
+	MaxWordLength int `yaml:"max_word_length"`
+	CaseSensitive bool `yaml:"case_sensitive"`
+	
+	// Learning parameters
+	SpamThreshold   float64 `yaml:"spam_threshold"`
+	MinWordCount    int     `yaml:"min_word_count"`
+	SmoothingFactor float64 `yaml:"smoothing_factor"`
+	
+	// Features
+	UseSubjectWords bool `yaml:"use_subject_words"`
+	UseBodyWords    bool `yaml:"use_body_words"`
+	UseHeaderWords  bool `yaml:"use_header_words"`
+	
+	// Performance
+	MaxVocabularySize int `yaml:"max_vocabulary_size"`
+	
+	// Training
+	AutoTrain bool `yaml:"auto_train"`
+}
+
 // DefaultConfig returns ZPO default configuration
 func DefaultConfig() *Config {
 	return &Config{
@@ -122,6 +156,7 @@ func DefaultConfig() *Config {
 				FromToMismatch:    2.0,
 				SubjectLength:     0.5,
 				FrequencyPenalty:  2.0,
+				WordFrequency:     2.0,
 			},
 			Keywords: KeywordLists{
 				HighRisk: []string{
@@ -171,6 +206,21 @@ func DefaultConfig() *Config {
 			Format:     "text",
 			MaxSizeMB:  10,
 			MaxBackups: 3,
+		},
+		Learning: LearningConfig{
+			Enabled:           false,
+			ModelPath:         "zpo-model.json",
+			MinWordLength:     3,
+			MaxWordLength:     20,
+			CaseSensitive:     false,
+			SpamThreshold:     0.7,
+			MinWordCount:      2,
+			SmoothingFactor:   1.0,
+			UseSubjectWords:   true,
+			UseBodyWords:      true,
+			UseHeaderWords:    false,
+			MaxVocabularySize: 10000,
+			AutoTrain:         false,
 		},
 	}
 }
