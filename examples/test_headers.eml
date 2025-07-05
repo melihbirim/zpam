@@ -1,0 +1,52 @@
+Return-Path: <marketing@suspicious-bulk.com>
+Received: from dynamic.pool.isp.com (dynamic.pool.isp.com [10.0.0.1])
+	by mail.example.com (Postfix) with ESMTP id 12345
+	for <user@example.com>; Mon, 01 Jan 2024 12:00:00 +0000 (UTC)
+Received: from suspicious.server.com (suspicious.server.com [192.168.1.1])
+	by dynamic.pool.isp.com (Postfix) with ESMTP id 67890
+	Mon, 01 Jan 2024 11:59:45 +0000 (UTC)
+From: "Amazing Deals" <winner@legit-domain.com>
+To: user@example.com
+Subject: CONGRATULATIONS!!! You've WON $1000000 FREE MONEY!!!
+Date: Mon, 01 Jan 2024 12:00:00 +0000
+Message-ID: <invalid-message-id>
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+DKIM-Signature: v=1; a=rsa-sha256; d=suspicious-bulk.com; s=default; 
+	h=from:to:subject:date:message-id; bh=bodyhash; b=signature
+X-Mailer: BulkMailer Pro 3.0
+X-Spam-Status: Not checked
+X-Originating-IP: [10.0.0.1]
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>URGENT - CLAIM YOUR PRIZE NOW!</title>
+</head>
+<body>
+<h1>CONGRATULATIONS!!! YOU ARE A WINNER!!!</h1>
+
+<p>Dear Lucky Winner,</p>
+
+<p>You have been selected to receive <strong>$1,000,000 FREE MONEY</strong> 
+from our international lottery! This is a LIMITED TIME OFFER that expires 
+in 24 hours!</p>
+
+<p><strong>ACT NOW!</strong> Click the link below to claim your prize:</p>
+
+<p><a href="http://suspicious-site.com/claim?id=123456">CLAIM YOUR MILLION DOLLARS NOW!</a></p>
+
+<p>This is guaranteed 100% legitimate! No risk involved! 
+Visit our website at http://scam-site.com for more amazing offers!</p>
+
+<p>Don't miss this opportunity! Forward this email to 10 friends 
+and receive an additional $100,000 bonus!</p>
+
+<p>Regards,<br>
+The Prize Committee<br>
+Nigerian Prince Foundation</p>
+
+<p><small>This email was sent from: suspicious-bulk.com<br>
+If you received this email in error, please ignore it.</small></p>
+</body>
+</html> 

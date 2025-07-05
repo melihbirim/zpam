@@ -24,6 +24,9 @@ type Config struct {
 	
 	// Learning settings
 	Learning LearningConfig `yaml:"learning"`
+	
+	// Headers validation settings
+	Headers HeadersConfig `yaml:"headers"`
 }
 
 // DetectionConfig contains spam detection parameters
@@ -57,6 +60,7 @@ type FeatureWeights struct {
 	SubjectLength     float64 `yaml:"subject_length"`
 	FrequencyPenalty  float64 `yaml:"frequency_penalty"`
 	WordFrequency     float64 `yaml:"word_frequency"`
+	HeaderValidation  float64 `yaml:"header_validation"`
 }
 
 // KeywordLists contains spam keyword categories
@@ -137,6 +141,29 @@ type LearningConfig struct {
 	AutoTrain bool `yaml:"auto_train"`
 }
 
+// HeadersConfig contains email headers validation settings
+type HeadersConfig struct {
+	// Enable/disable validations
+	EnableSPF   bool `yaml:"enable_spf"`
+	EnableDKIM  bool `yaml:"enable_dkim"`
+	EnableDMARC bool `yaml:"enable_dmarc"`
+	
+	// DNS timeout
+	DNSTimeoutMs int `yaml:"dns_timeout_ms"`
+	
+	// Thresholds
+	MaxHopCount           int `yaml:"max_hop_count"`
+	SuspiciousServerScore int `yaml:"suspicious_server_score"`
+	
+	// Scoring weights
+	AuthWeight       float64 `yaml:"auth_weight"`
+	SuspiciousWeight float64 `yaml:"suspicious_weight"`
+	
+	// Cache settings
+	CacheSize   int `yaml:"cache_size"`
+	CacheTTLMin int `yaml:"cache_ttl_min"`
+}
+
 // DefaultConfig returns ZPO default configuration
 func DefaultConfig() *Config {
 	return &Config{
@@ -157,6 +184,7 @@ func DefaultConfig() *Config {
 				SubjectLength:     0.5,
 				FrequencyPenalty:  2.0,
 				WordFrequency:     2.0,
+				HeaderValidation:  2.5,
 			},
 			Keywords: KeywordLists{
 				HighRisk: []string{
@@ -221,6 +249,18 @@ func DefaultConfig() *Config {
 			UseHeaderWords:    false,
 			MaxVocabularySize: 10000,
 			AutoTrain:         false,
+		},
+		Headers: HeadersConfig{
+			EnableSPF:             true,
+			EnableDKIM:            true,
+			EnableDMARC:           true,
+			DNSTimeoutMs:          5000,
+			MaxHopCount:           15,
+			SuspiciousServerScore: 75,
+			AuthWeight:            2.0,
+			SuspiciousWeight:      2.5,
+			CacheSize:             1000,
+			CacheTTLMin:           60,
 		},
 	}
 }
