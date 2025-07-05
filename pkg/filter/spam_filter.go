@@ -9,6 +9,7 @@ import (
 
 	"github.com/zpo/spam-filter/pkg/config"
 	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpo/spam-filter/pkg/learning"
 	"github.com/zpo/spam-filter/pkg/tracker"
 )
 
@@ -24,6 +25,7 @@ type SpamFilter struct {
 	parser   *email.Parser
 	config   *config.Config
 	tracker  *tracker.FrequencyTracker
+	learner  *learning.WordFrequency
 	
 	// Legacy fields for backward compatibility
 	keywords SpamKeywords
@@ -57,6 +59,9 @@ type FeatureWeights struct {
 	FromToMismatch    float64
 	SubjectLength     float64
 	FrequencyPenalty  float64
+	
+	// Learning weights
+	WordFrequency     float64
 }
 
 // NewSpamFilter creates a new spam filter with default configuration
@@ -67,13 +72,40 @@ func NewSpamFilter() *SpamFilter {
 
 // NewSpamFilterWithConfig creates a new spam filter with custom configuration
 func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
-	return &SpamFilter{
+	sf := &SpamFilter{
 		parser:   email.NewParser(),
 		config:   cfg,
 		tracker:  tracker.NewFrequencyTracker(60, cfg.Performance.CacheSize), // 60 minute window
 		keywords: convertConfigKeywords(cfg.Detection.Keywords),
 		weights:  convertConfigWeights(cfg.Detection.Weights),
 	}
+	
+	// Initialize word frequency learner if enabled
+	if cfg.Learning.Enabled {
+		learningConfig := &learning.Config{
+			MinWordLength:     cfg.Learning.MinWordLength,
+			MaxWordLength:     cfg.Learning.MaxWordLength,
+			CaseSensitive:     cfg.Learning.CaseSensitive,
+			SpamThreshold:     cfg.Learning.SpamThreshold,
+			MinWordCount:      cfg.Learning.MinWordCount,
+			SmoothingFactor:   cfg.Learning.SmoothingFactor,
+			UseSubjectWords:   cfg.Learning.UseSubjectWords,
+			UseBodyWords:      cfg.Learning.UseBodyWords,
+			UseHeaderWords:    cfg.Learning.UseHeaderWords,
+			MaxVocabularySize: cfg.Learning.MaxVocabularySize,
+		}
+		
+		sf.learner = learning.NewWordFrequency(learningConfig)
+		
+		// Try to load existing model
+		if _, err := os.Stat(cfg.Learning.ModelPath); err == nil {
+			if err := sf.learner.LoadModel(cfg.Learning.ModelPath); err != nil {
+				fmt.Printf("Warning: Failed to load learning model: %v\n", err)
+			}
+		}
+	}
+	
+	return sf
 }
 
 // LoadConfigFromPath loads configuration from file path or returns default
@@ -198,6 +230,11 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 	// Behavioral scoring
 	score += sf.scoreFromToMismatch(email.Features.FromToMismatch)
 	score += sf.scoreSubjectLength(email.Features.SubjectLength)
+	
+	// Word frequency learning scoring (if enabled)
+	if sf.learner != nil {
+		score += sf.scoreLearning(email.Subject, email.Body)
+	}
 	
 	// Frequency scoring (if enabled)
 	if sf.config == nil || sf.config.Detection.Features.FrequencyTracking {
@@ -431,6 +468,7 @@ func getOptimizedWeights() FeatureWeights {
 		FromToMismatch:   2.0,
 		SubjectLength:    0.5,
 		FrequencyPenalty: 2.0,
+		WordFrequency:    2.0,
 	}
 }
 
@@ -459,6 +497,7 @@ func convertConfigWeights(configWeights config.FeatureWeights) FeatureWeights {
 		FromToMismatch:    configWeights.FromToMismatch,
 		SubjectLength:     configWeights.SubjectLength,
 		FrequencyPenalty:  configWeights.FrequencyPenalty,
+		WordFrequency:     configWeights.WordFrequency,
 	}
 }
 
@@ -487,4 +526,26 @@ func (sf *SpamFilter) scoreFrequency(email, domain string) float64 {
 	}
 	
 	return result.FrequencyScore * weight
+}
+
+// scoreLearning scores based on learned word frequencies
+func (sf *SpamFilter) scoreLearning(subject, body string) float64 {
+	if sf.learner == nil {
+		return 0
+	}
+	
+	// Get spam probability from learner
+	spamProb := sf.learner.ClassifyText(subject, body)
+	
+	// Convert probability to score (0-1 -> 0-10)
+	// Values > 0.5 are considered spammy
+	if spamProb > 0.5 {
+		weight := sf.weights.WordFrequency
+		if sf.config != nil {
+			weight = sf.config.Detection.Weights.WordFrequency
+		}
+		return (spamProb - 0.5) * 20 * weight // Scale to 0-10
+	}
+	
+	return 0
 } 

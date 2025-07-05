@@ -29,4 +29,5 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(benchmarkCmd)
+	rootCmd.AddCommand(trainCmd)
 } 

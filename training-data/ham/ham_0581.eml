@@ -1,0 +1,14 @@
+From: john.smith@government.gov
+To: employee@test.org
+Subject: Invoice #12345
+Date: Sat, 26 Apr 2025 19:10:46 +0100
+Message-ID: <5128211704345829190@generator.local>
+
+Hello,
+
+Please find attached the quarterly report for your review. The numbers look good overall, with a 15% increase in revenue.
+
+Let me know if you have any questions.
+
+Thanks,
+John Smith%!(EXTRA string=John Smith)

@@ -18,6 +18,7 @@ detection:
     from_to_mismatch: 2.0
     subject_length: 0.5
     frequency_penalty: 2.0
+    word_frequency: 2.0
   
   keywords:
     high_risk:
@@ -107,3 +108,19 @@ logging:
   format: "text" # text or json
   max_size_mb: 10
   max_backups: 3 
+
+# Word frequency learning settings
+learning:
+  enabled: true               # Enable Bayesian word learning
+  model_path: "zpo-model.json" # Path to save/load learned model
+  min_word_length: 3          # Minimum word length for learning
+  max_word_length: 20         # Maximum word length for learning
+  case_sensitive: false       # Whether to preserve case
+  spam_threshold: 0.7         # Spam probability threshold
+  min_word_count: 2           # Minimum occurrences to consider a word
+  smoothing_factor: 1.0       # Laplace smoothing factor
+  use_subject_words: true     # Learn from email subjects
+  use_body_words: true        # Learn from email bodies
+  use_header_words: false     # Learn from email headers
+  max_vocabulary_size: 10000  # Maximum vocabulary size
+  auto_train: false           # Automatically train on classified emails
