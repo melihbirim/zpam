@@ -1,0 +1,14 @@
+From: mike.johnson@consulting.biz
+To: customer@test.org
+Subject: Invoice #12345
+Date: Sat, 03 Aug 2024 19:12:03 +0100
+Message-ID: <6581226101568440831@generator.local>
+
+Hello,
+
+Please find attached the quarterly report for your review. The numbers look good overall, with a 15% increase in revenue.
+
+Let me know if you have any questions.
+
+Thanks,
+Mike Johnson%!(EXTRA string=Mike Johnson)

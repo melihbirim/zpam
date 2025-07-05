@@ -27,4 +27,6 @@ func init() {
 	rootCmd.AddCommand(filterCmd)
 	rootCmd.AddCommand(testCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(benchmarkCmd)
 } 

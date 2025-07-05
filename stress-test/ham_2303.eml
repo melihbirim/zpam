@@ -1,0 +1,14 @@
+From: robert.miller@university.edu
+To: customer@test.org
+Subject: Invoice #12345
+Date: Thu, 22 May 2025 07:12:03 +0100
+Message-ID: <1732023899766861776@generator.local>
+
+Hello,
+
+Please find attached the quarterly report for your review. The numbers look good overall, with a 15% increase in revenue.
+
+Let me know if you have any questions.
+
+Thanks,
+John Smith%!(EXTRA string=John Smith)

@@ -1,0 +1,14 @@
+From: mike.johnson@consulting.biz
+To: employee@example.com
+Subject: Invoice #12345
+Date: Fri, 05 Jul 2024 06:12:03 +0100
+Message-ID: <1181280534965022421@generator.local>
+
+Hello,
+
+Please find attached the quarterly report for your review. The numbers look good overall, with a 15% increase in revenue.
+
+Let me know if you have any questions.
+
+Thanks,
+Jane Doe%!(EXTRA string=Jane Doe)
