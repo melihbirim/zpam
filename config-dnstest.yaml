@@ -1,0 +1,127 @@
+# ZPO Spam Filter Configuration - DNS Testing Mode
+# Optimized for internal DNS testing with controlled environment
+
+detection:
+  spam_threshold: 4
+  
+  weights:
+    subject_keywords: 3.0
+    body_keywords: 2.0
+    caps_ratio: 1.5
+    exclamation_ratio: 1.0
+    url_density: 2.5
+    html_ratio: 1.0
+    suspicious_headers: 2.0
+    attachment_risk: 1.5
+    domain_reputation: 3.0
+    encoding_issues: 1.0
+    from_to_mismatch: 2.0
+    subject_length: 0.5
+    frequency_penalty: 2.0
+    word_frequency: 2.0
+    header_validation: 2.5  # Full weight for DNS testing
+  
+  keywords:
+    high_risk:
+      - "free money"
+      - "get rich quick"
+      - "make money fast"
+      - "guaranteed income"
+      - "act now"
+      - "limited time"
+      - "urgent"
+      - "congratulations"
+      - "you have won"
+      - "lottery"
+      - "viagra"
+      - "cialis"
+    
+    medium_risk:
+      - "click here"
+      - "special offer"
+      - "discount"
+      - "credit"
+      - "loan"
+      - "weight loss"
+      - "earn extra"
+    
+    low_risk:
+      - "free"
+      - "offer"
+      - "deal"
+      - "sale"
+      - "promotion"
+      - "bonus"
+  
+  features:
+    keyword_detection: true
+    header_analysis: true
+    attachment_scan: true
+    domain_check: true
+    frequency_tracking: true
+    learning_mode: false
+
+lists:
+  whitelist_emails: []
+  whitelist_domains: []
+  blacklist_emails: []
+  blacklist_domains: []
+  
+  trusted_domains:
+    - "gmail.com"
+    - "yahoo.com"
+    - "outlook.com"
+    - "government.gov"
+    - "test.org"
+
+performance:
+  max_concurrent_emails: 20    # Higher concurrency for async testing
+  timeout_ms: 500              # Fast timeout for test environment
+  cache_size: 1000
+  batch_size: 100
+
+# DNS Testing Configuration - OPTIMIZED FOR INTERNAL TESTING
+headers:
+  enable_spf: true             # Enable SPF validation with test data
+  enable_dkim: true            # Enable DKIM validation with test data
+  enable_dmarc: true           # Enable DMARC validation with test data
+  dns_timeout_ms: 100          # Very fast timeout for internal testing
+  max_hop_count: 15
+  suspicious_server_score: 75
+  auth_weight: 2.5             # Full weight for authentication testing
+  suspicious_weight: 2.0
+  cache_size: 10000            # Large cache for extensive testing
+  cache_ttl_min: 60            # Long TTL for test stability
+  
+  # DNS Testing Mode Settings
+  use_internal_dns: true       # Enable internal DNS test server
+  async_dns_workers: 10        # Worker pool size for async operations
+  enable_async_dns: true       # Enable non-blocking DNS operations
+  
+  # Performance monitoring for testing
+  enable_cache_stats: true
+  log_cache_performance: true
+  dns_performance_threshold_ms: 1  # Alert if DNS takes > 1ms (internal should be sub-ms)
+
+# Word frequency learning
+learning:
+  enabled: true
+  model_path: "zpo-model.json"
+  min_word_length: 3
+  max_word_length: 20
+  case_sensitive: false
+  spam_threshold: 0.7
+  min_word_count: 2
+  smoothing_factor: 1.0
+  use_subject_words: true
+  use_body_words: true
+  use_header_words: false
+  max_vocabulary_size: 10000
+  auto_train: false
+
+logging:
+  level: "info"
+  file: ""
+  format: "text"
+  max_size_mb: 10
+  max_backups: 3

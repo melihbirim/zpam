@@ -1,13 +1,14 @@
 package headers
 
 import (
-	"context"
 	"fmt"
-	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"net"
+
+	"github.com/zpo/spam-filter/pkg/dns"
 )
 
 // ValidationResult contains email header validation results
@@ -30,6 +31,19 @@ type ValidationResult struct {
 	// Validation metadata
 	ValidatedAt time.Time `json:"validated_at"`
 	Duration    time.Duration `json:"duration"`
+	
+	// Cache performance statistics
+	CacheStats CachePerformance `json:"cache_stats"`
+}
+
+// CachePerformance contains cache performance metrics
+type CachePerformance struct {
+	HitRate       float64 `json:"hit_rate"`         // Overall DNS cache hit rate (%)
+	TotalEntries  int64   `json:"total_entries"`    // Total cached entries
+	TotalHits     int64   `json:"total_hits"`       // Total cache hits
+	TotalMisses   int64   `json:"total_misses"`     // Total cache misses
+	TotalErrors   int64   `json:"total_errors"`     // Total DNS errors
+	TotalEvictions int64  `json:"total_evictions"`  // Total cache evictions
 }
 
 // SPFResult contains SPF validation results
@@ -70,16 +84,26 @@ type RoutingResult struct {
 	ReverseDNSIssues []string `json:"reverse_dns_issues"`
 }
 
+// DNSClient interface for DNS operations
+type DNSClient interface {
+	LookupTXT(domain string) ([]string, error)
+	LookupA(domain string) ([]net.IP, error)
+	LookupMX(domain string) ([]*net.MX, error)
+	GetSPFRecord(domain string) (string, error)
+	GetDMARCRecord(domain string) (string, error)
+	CheckIPInA(domain, ip string) (bool, error)
+	CheckIPInMX(domain, ip string) (bool, error)
+	ValidateReverseDNS(ip string) (bool, error)
+	GetStats() dns.Stats
+	ClearCache()
+	ResetStats()
+	HitRate() float64
+}
+
 // Validator handles email header validation
 type Validator struct {
-	config *Config
-	
-	// DNS resolver for SPF/DMARC lookups
-	resolver *net.Resolver
-	
-	// Caches
-	spfCache   map[string]*SPFResult
-	dmarcCache map[string]*DMARCResult
+	config    *Config
+	dnsClient DNSClient
 }
 
 // Config contains validation configuration
@@ -133,19 +157,39 @@ func NewValidator(config *Config) *Validator {
 		config = DefaultConfig()
 	}
 	
+	// Create DNS client with caching
+	dnsConfig := dns.Config{
+		Timeout:       config.DNSTimeout,
+		CacheSize:     config.CacheSize,
+		CacheTTL:      config.CacheTTL,
+		EnableCaching: true,
+	}
+	
 	return &Validator{
-		config: config,
-		resolver: &net.Resolver{
-			PreferGo: true,
-			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-				d := net.Dialer{
-					Timeout: config.DNSTimeout,
-				}
-				return d.DialContext(ctx, network, address)
-			},
-		},
-		spfCache:   make(map[string]*SPFResult),
-		dmarcCache: make(map[string]*DMARCResult),
+		config:    config,
+		dnsClient: dns.NewClient(dnsConfig),
+	}
+}
+
+// NewTestValidator creates a header validator using the test DNS client
+func NewTestValidator(config *Config, testServer *dns.TestServer) *Validator {
+	if config == nil {
+		config = DefaultConfig()
+	}
+	
+	// Create DNS client with test server
+	dnsConfig := dns.Config{
+		Timeout:       config.DNSTimeout,
+		CacheSize:     config.CacheSize,
+		CacheTTL:      config.CacheTTL,
+		EnableCaching: true,
+	}
+	
+	testClient := dns.NewTestClient(dnsConfig, testServer)
+	
+	return &Validator{
+		config:    config,
+		dnsClient: testClient,
 	}
 }
 
@@ -192,6 +236,9 @@ func (v *Validator) ValidateHeaders(headers map[string]string) *ValidationResult
 	result.AuthScore = v.calculateAuthScore(result)
 	result.SuspiciScore = v.calculateSuspiciousScore(result)
 	
+	// Collect cache statistics
+	result.CacheStats = v.collectCacheStats()
+	
 	result.Duration = time.Since(start)
 	return result
 }
@@ -202,30 +249,9 @@ func (v *Validator) validateSPF(domain, clientIP string) SPFResult {
 		IPMatches: make([]string, 0),
 	}
 	
-	// Check cache
-	if cached, exists := v.spfCache[domain]; exists {
-		return *cached
-	}
-	
-	// Lookup SPF record
-	ctx := context.Background()
-	txtRecords, err := v.resolver.LookupTXT(ctx, domain)
+	// Get SPF record using DNS client
+	spfRecord, err := v.dnsClient.GetSPFRecord(domain)
 	if err != nil {
-		result.Result = "temperror"
-		result.Explanation = fmt.Sprintf("DNS lookup failed: %v", err)
-		return result
-	}
-	
-	// Find SPF record
-	var spfRecord string
-	for _, record := range txtRecords {
-		if strings.HasPrefix(record, "v=spf1") {
-			spfRecord = record
-			break
-		}
-	}
-	
-	if spfRecord == "" {
 		result.Result = "none"
 		result.Explanation = "No SPF record found"
 		return result
@@ -234,9 +260,6 @@ func (v *Validator) validateSPF(domain, clientIP string) SPFResult {
 	result.Record = spfRecord
 	result.Result = v.evaluateSPF(spfRecord, clientIP, domain)
 	result.Valid = (result.Result == "pass")
-	
-	// Cache result
-	v.spfCache[domain] = &result
 	
 	return result
 }
@@ -337,30 +360,9 @@ func (v *Validator) validateDKIM(headers map[string]string) DKIMResult {
 func (v *Validator) validateDMARC(domain string, spf SPFResult, dkim DKIMResult) DMARCResult {
 	result := DMARCResult{}
 	
-	// Check cache
-	if cached, exists := v.dmarcCache[domain]; exists {
-		return *cached
-	}
-	
-	// Lookup DMARC record
-	dmarcDomain := "_dmarc." + domain
-	ctx := context.Background()
-	txtRecords, err := v.resolver.LookupTXT(ctx, dmarcDomain)
+	// Get DMARC record using DNS client
+	dmarcRecord, err := v.dnsClient.GetDMARCRecord(domain)
 	if err != nil {
-		result.Explanation = fmt.Sprintf("DMARC lookup failed: %v", err)
-		return result
-	}
-	
-	// Find DMARC record
-	var dmarcRecord string
-	for _, record := range txtRecords {
-		if strings.HasPrefix(record, "v=DMARC1") {
-			dmarcRecord = record
-			break
-		}
-	}
-	
-	if dmarcRecord == "" {
 		result.Explanation = "No DMARC record found"
 		return result
 	}
@@ -392,9 +394,6 @@ func (v *Validator) validateDMARC(domain string, spf SPFResult, dkim DKIMResult)
 	} else {
 		result.Explanation = "DMARC alignment failed"
 	}
-	
-	// Cache result
-	v.dmarcCache[domain] = &result
 	
 	return result
 }
@@ -585,41 +584,27 @@ func (v *Validator) ipInCIDR(ip, cidr string) bool {
 }
 
 func (v *Validator) checkARecord(domain, ip string) bool {
-	ctx := context.Background()
-	ips, err := v.resolver.LookupIPAddr(ctx, domain)
+	match, err := v.dnsClient.CheckIPInA(domain, ip)
 	if err != nil {
 		return false
 	}
-	
-	for _, addr := range ips {
-		if addr.IP.String() == ip {
-			return true
-		}
-	}
-	
-	return false
+	return match
 }
 
 func (v *Validator) checkMXRecord(domain, ip string) bool {
-	ctx := context.Background()
-	mxRecords, err := v.resolver.LookupMX(ctx, domain)
+	match, err := v.dnsClient.CheckIPInMX(domain, ip)
 	if err != nil {
 		return false
 	}
-	
-	for _, mx := range mxRecords {
-		if v.checkARecord(mx.Host, ip) {
-			return true
-		}
-	}
-	
-	return false
+	return match
 }
 
 func (v *Validator) validateReverseDNS(ip string) bool {
-	ctx := context.Background()
-	names, err := v.resolver.LookupAddr(ctx, ip)
-	return err == nil && len(names) > 0
+	valid, err := v.dnsClient.ValidateReverseDNS(ip)
+	if err != nil {
+		return false
+	}
+	return valid
 }
 
 func (v *Validator) isValidMessageID(messageID string) bool {
@@ -732,4 +717,33 @@ func (v *Validator) calculateSuspiciousScore(result *ValidationResult) float64 {
 	}
 	
 	return score
+}
+
+// collectCacheStats collects cache performance statistics
+func (v *Validator) collectCacheStats() CachePerformance {
+	stats := v.dnsClient.GetStats()
+	
+	return CachePerformance{
+		HitRate:        v.dnsClient.HitRate(),
+		TotalEntries:   stats.Entries,
+		TotalHits:      stats.Hits,
+		TotalMisses:    stats.Misses,
+		TotalErrors:    stats.Errors,
+		TotalEvictions: stats.Evictions,
+	}
+}
+
+// GetCacheStats returns current cache performance statistics
+func (v *Validator) GetCacheStats() CachePerformance {
+	return v.collectCacheStats()
+}
+
+// ClearCaches clears all DNS caches
+func (v *Validator) ClearCaches() {
+	v.dnsClient.ClearCache()
+}
+
+// ResetCacheStats resets all cache statistics
+func (v *Validator) ResetCacheStats() {
+	v.dnsClient.ResetStats()
 } 

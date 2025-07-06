@@ -235,14 +235,87 @@ func (g *EmailGenerator) generateRecipient() string {
 func (g *EmailGenerator) generateSpamBody() string {
 	template := g.randomChoice(g.spamBodies)
 	link := fmt.Sprintf("http://%s/click-here", g.randomChoice(g.spamDomains))
-	return fmt.Sprintf(template, link)
+	
+	// Create a long spam email with multiple paragraphs
+	baseBody := fmt.Sprintf(template, link)
+	
+	// Add additional spam content to reach 1000+ words
+	extraContent := []string{
+		"This is a once-in-a-lifetime opportunity that you cannot afford to miss! Our revolutionary system has helped thousands of people achieve financial freedom and live the life of their dreams.",
+		"Don't let this chance slip away - act now before it's too late! Our limited-time offer expires soon and you don't want to be left behind while others are making huge profits.",
+		"We guarantee 100% satisfaction or your money back. No questions asked. This is completely risk-free and you have nothing to lose but everything to gain.",
+		"Join our exclusive community of successful entrepreneurs who are already earning massive passive income. You could be next!",
+		"URGENT: This offer is only available to the first 100 people who respond today. Don't wait - secure your spot now!",
+		"Make money while you sleep! Our automated system works 24/7 to generate income for you. No experience required - anyone can do this!",
+		"Stop struggling with financial problems. Take control of your future and start earning the money you deserve. Your dreams are within reach!",
+		"WARNING: If you don't act now, you will regret it for the rest of your life. This opportunity may never come again.",
+		"Testimonials from our satisfied customers: 'I made $50,000 in my first month!' 'This changed my life completely!' 'I wish I had found this sooner!'",
+		"Free bonus included: Get our exclusive guide to making money online absolutely free when you sign up today. Limited quantities available!",
+	}
+	
+	// Add 8-12 additional paragraphs to reach 1000+ words
+	numParagraphs := 8 + g.rand.Intn(5)
+	for i := 0; i < numParagraphs; i++ {
+		paragraph := g.randomChoice(extraContent)
+		// Add some randomization to avoid exact duplicates
+		if g.rand.Float64() < 0.3 {
+			paragraph = strings.ToUpper(paragraph)
+		}
+		if g.rand.Float64() < 0.5 {
+			paragraph += " " + g.randomChoice(g.spamKeywords) + "! " + g.randomChoice(g.spamKeywords) + "!"
+		}
+		baseBody += "\n\n" + paragraph
+	}
+	
+	// Add final call to action
+	baseBody += "\n\nClick here immediately: " + link
+	baseBody += "\n\nDon't wait! Act now! Time is running out!"
+	
+	return baseBody
 }
 
 // generateHamBody creates legitimate email body
 func (g *EmailGenerator) generateHamBody() string {
 	template := g.randomChoice(g.hamBodies)
 	name := g.randomChoice(g.names)
-	return fmt.Sprintf(template, name, name)
+	
+	// Create a long legitimate email with detailed business content
+	baseBody := fmt.Sprintf(template, name, name)
+	
+	// Add professional business content to reach 1000+ words
+	businessContent := []string{
+		"I wanted to provide you with a comprehensive update on our current project status and upcoming initiatives. We've made significant progress across all fronts.",
+		"The quarterly analysis shows positive trends in key performance indicators. Revenue is up 15% compared to the same period last year, and customer satisfaction ratings have improved substantially.",
+		"Our development team has been working diligently on the new features requested by stakeholders. The user interface improvements are scheduled for deployment next month.",
+		"We've identified several opportunities for process optimization that could reduce operational costs by approximately 20% while maintaining service quality standards.",
+		"The market research indicates strong demand for our upcoming product line. Initial feedback from focus groups has been overwhelmingly positive.",
+		"Our partnership with regional distributors has expanded our market reach significantly. We're now serving customers in 15 additional metropolitan areas.",
+		"The training program for new employees has been updated to include the latest industry best practices and compliance requirements. Initial results show improved retention rates.",
+		"Budget allocations for the next fiscal year need to be finalized by the end of this month. Please review the preliminary numbers and provide your feedback.",
+		"The client presentation scheduled for next week will showcase our innovative solutions and demonstrate our competitive advantages in the marketplace.",
+		"Regulatory compliance updates require immediate attention. The new standards go into effect at the beginning of next quarter.",
+		"Our sustainability initiatives have reduced energy consumption by 25% and waste output by 30%. These improvements align with our corporate responsibility goals.",
+		"Customer feedback surveys indicate high satisfaction with recent service improvements. The average rating has increased from 4.2 to 4.7 out of 5.",
+	}
+	
+	// Add 6-10 additional paragraphs for professional length
+	numParagraphs := 6 + g.rand.Intn(5)
+	for i := 0; i < numParagraphs; i++ {
+		paragraph := g.randomChoice(businessContent)
+		// Add some business-specific details
+		if g.rand.Float64() < 0.4 {
+			metrics := []string{"KPIs", "ROI", "quarterly targets", "market share", "customer acquisition"}
+			paragraph += " The " + g.randomChoice(metrics) + " analysis supports this initiative."
+		}
+		baseBody += "\n\n" + paragraph
+	}
+	
+	// Add professional closing
+	baseBody += "\n\nPlease let me know if you have any questions or need additional information."
+	baseBody += "\n\nI look forward to discussing this further in our upcoming meeting."
+	baseBody += "\n\nThank you for your continued support and collaboration."
+	
+	return baseBody
 }
 
 // addSpamCharacteristics adds typical spam characteristics
