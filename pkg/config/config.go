@@ -12,34 +12,37 @@ import (
 type Config struct {
 	// Spam detection settings
 	Detection DetectionConfig `yaml:"detection"`
-	
+
 	// Whitelist/Blacklist settings
 	Lists ListsConfig `yaml:"lists"`
-	
+
 	// Performance settings
 	Performance PerformanceConfig `yaml:"performance"`
-	
+
 	// Logging settings
 	Logging LoggingConfig `yaml:"logging"`
-	
+
 	// Learning settings
 	Learning LearningConfig `yaml:"learning"`
-	
+
 	// Headers validation settings
 	Headers HeadersConfig `yaml:"headers"`
+
+	// Milter server settings
+	Milter MilterConfig `yaml:"milter"`
 }
 
 // DetectionConfig contains spam detection parameters
 type DetectionConfig struct {
 	// Scoring thresholds
 	SpamThreshold int `yaml:"spam_threshold"` // 4-5 = spam
-	
+
 	// Feature weights
 	Weights FeatureWeights `yaml:"weights"`
-	
+
 	// Keywords for detection
 	Keywords KeywordLists `yaml:"keywords"`
-	
+
 	// Enable/disable features
 	Features FeatureToggles `yaml:"features"`
 }
@@ -85,11 +88,11 @@ type ListsConfig struct {
 	// Email addresses
 	WhitelistEmails []string `yaml:"whitelist_emails"`
 	BlacklistEmails []string `yaml:"blacklist_emails"`
-	
+
 	// Domains
 	WhitelistDomains []string `yaml:"whitelist_domains"`
 	BlacklistDomains []string `yaml:"blacklist_domains"`
-	
+
 	// Trusted domains (override other checks)
 	TrustedDomains []string `yaml:"trusted_domains"`
 }
@@ -97,16 +100,16 @@ type ListsConfig struct {
 // PerformanceConfig contains performance tuning
 type PerformanceConfig struct {
 	MaxConcurrentEmails int `yaml:"max_concurrent_emails"`
-	TimeoutMs          int `yaml:"timeout_ms"`
-	CacheSize          int `yaml:"cache_size"`
-	BatchSize          int `yaml:"batch_size"`
+	TimeoutMs           int `yaml:"timeout_ms"`
+	CacheSize           int `yaml:"cache_size"`
+	BatchSize           int `yaml:"batch_size"`
 }
 
 // LoggingConfig contains logging settings
 type LoggingConfig struct {
-	Level      string `yaml:"level"`       // debug, info, warn, error
-	File       string `yaml:"file"`        // log file path, empty = stdout
-	Format     string `yaml:"format"`      // json, text
+	Level      string `yaml:"level"`  // debug, info, warn, error
+	File       string `yaml:"file"`   // log file path, empty = stdout
+	Format     string `yaml:"format"` // json, text
 	MaxSizeMB  int    `yaml:"max_size_mb"`
 	MaxBackups int    `yaml:"max_backups"`
 }
@@ -115,28 +118,28 @@ type LoggingConfig struct {
 type LearningConfig struct {
 	// Enable word frequency learning
 	Enabled bool `yaml:"enabled"`
-	
+
 	// Model file path
 	ModelPath string `yaml:"model_path"`
-	
+
 	// Word processing
-	MinWordLength int `yaml:"min_word_length"`
-	MaxWordLength int `yaml:"max_word_length"`
+	MinWordLength int  `yaml:"min_word_length"`
+	MaxWordLength int  `yaml:"max_word_length"`
 	CaseSensitive bool `yaml:"case_sensitive"`
-	
+
 	// Learning parameters
 	SpamThreshold   float64 `yaml:"spam_threshold"`
 	MinWordCount    int     `yaml:"min_word_count"`
 	SmoothingFactor float64 `yaml:"smoothing_factor"`
-	
+
 	// Features
 	UseSubjectWords bool `yaml:"use_subject_words"`
 	UseBodyWords    bool `yaml:"use_body_words"`
 	UseHeaderWords  bool `yaml:"use_header_words"`
-	
+
 	// Performance
 	MaxVocabularySize int `yaml:"max_vocabulary_size"`
-	
+
 	// Training
 	AutoTrain bool `yaml:"auto_train"`
 }
@@ -147,21 +150,73 @@ type HeadersConfig struct {
 	EnableSPF   bool `yaml:"enable_spf"`
 	EnableDKIM  bool `yaml:"enable_dkim"`
 	EnableDMARC bool `yaml:"enable_dmarc"`
-	
+
 	// DNS timeout
 	DNSTimeoutMs int `yaml:"dns_timeout_ms"`
-	
+
 	// Thresholds
 	MaxHopCount           int `yaml:"max_hop_count"`
 	SuspiciousServerScore int `yaml:"suspicious_server_score"`
-	
+
 	// Scoring weights
 	AuthWeight       float64 `yaml:"auth_weight"`
 	SuspiciousWeight float64 `yaml:"suspicious_weight"`
-	
+
+	// SpamAssassin-inspired penalties
+	SPFFailPenalty      float64 `yaml:"spf_fail_penalty"`
+	DKIMMissingPenalty  float64 `yaml:"dkim_missing_penalty"`
+	DMARCMissingPenalty float64 `yaml:"dmarc_missing_penalty"`
+
 	// Cache settings
 	CacheSize   int `yaml:"cache_size"`
 	CacheTTLMin int `yaml:"cache_ttl_min"`
+}
+
+// MilterConfig contains milter server settings
+type MilterConfig struct {
+	// Enable milter server
+	Enabled bool `yaml:"enabled"`
+
+	// Network and address for milter socket
+	Network string `yaml:"network"` // "tcp" or "unix"
+	Address string `yaml:"address"` // "127.0.0.1:7357" or "/tmp/zpo.sock"
+
+	// Connection settings
+	ReadTimeoutMs  int `yaml:"read_timeout_ms"`
+	WriteTimeoutMs int `yaml:"write_timeout_ms"`
+
+	// Protocol options (what events to receive/skip)
+	SkipConnect bool `yaml:"skip_connect"`
+	SkipHelo    bool `yaml:"skip_helo"`
+	SkipMail    bool `yaml:"skip_mail"`
+	SkipRcpt    bool `yaml:"skip_rcpt"`
+	SkipHeaders bool `yaml:"skip_headers"`
+	SkipBody    bool `yaml:"skip_body"`
+	SkipEOH     bool `yaml:"skip_eoh"`
+	SkipData    bool `yaml:"skip_data"`
+
+	// Actions (what modifications milter can perform)
+	CanAddHeaders       bool `yaml:"can_add_headers"`
+	CanChangeHeaders    bool `yaml:"can_change_headers"`
+	CanAddRecipients    bool `yaml:"can_add_recipients"`
+	CanRemoveRecipients bool `yaml:"can_remove_recipients"`
+	CanChangeBody       bool `yaml:"can_change_body"`
+	CanQuarantine       bool `yaml:"can_quarantine"`
+	CanChangeFrom       bool `yaml:"can_change_from"`
+
+	// Performance
+	MaxConcurrentConnections int `yaml:"max_concurrent_connections"`
+	GracefulShutdownTimeout  int `yaml:"graceful_shutdown_timeout_ms"`
+
+	// Response modes
+	RejectThreshold     int    `yaml:"reject_threshold"`     // Score >= this value gets rejected
+	QuarantineThreshold int    `yaml:"quarantine_threshold"` // Score >= this value gets quarantined (if enabled)
+	RejectMessage       string `yaml:"reject_message"`       // Custom rejection message
+	QuarantineMessage   string `yaml:"quarantine_message"`   // Custom quarantine message
+
+	// Header modifications
+	AddSpamHeaders   bool   `yaml:"add_spam_headers"`   // Add X-Spam-* headers
+	SpamHeaderPrefix string `yaml:"spam_header_prefix"` // Prefix for spam headers (default: "X-ZPO-")
 }
 
 // DefaultConfig returns ZPO default configuration
@@ -224,9 +279,9 @@ func DefaultConfig() *Config {
 		},
 		Performance: PerformanceConfig{
 			MaxConcurrentEmails: 10,
-			TimeoutMs:          5000, // 5 second timeout
-			CacheSize:          1000,
-			BatchSize:          100,
+			TimeoutMs:           5000, // 5 second timeout
+			CacheSize:           1000,
+			BatchSize:           100,
 		},
 		Logging: LoggingConfig{
 			Level:      "info",
@@ -259,8 +314,41 @@ func DefaultConfig() *Config {
 			SuspiciousServerScore: 75,
 			AuthWeight:            2.0,
 			SuspiciousWeight:      2.5,
+			SPFFailPenalty:        0.9, // SpamAssassin-inspired
+			DKIMMissingPenalty:    1.0, // Much more reasonable
+			DMARCMissingPenalty:   1.5, // Moderate penalty
 			CacheSize:             1000,
 			CacheTTLMin:           60,
+		},
+		Milter: MilterConfig{
+			Enabled:                  false,
+			Network:                  "tcp",
+			Address:                  "127.0.0.1:7357",
+			ReadTimeoutMs:            10000,
+			WriteTimeoutMs:           10000,
+			SkipConnect:              false,
+			SkipHelo:                 false,
+			SkipMail:                 false,
+			SkipRcpt:                 false,
+			SkipHeaders:              false,
+			SkipBody:                 false,
+			SkipEOH:                  false,
+			SkipData:                 false,
+			CanAddHeaders:            true,
+			CanChangeHeaders:         true,
+			CanAddRecipients:         true,
+			CanRemoveRecipients:      false,
+			CanChangeBody:            true,
+			CanQuarantine:            false,
+			CanChangeFrom:            true,
+			MaxConcurrentConnections: 10,
+			GracefulShutdownTimeout:  10000,
+			RejectThreshold:          5,
+			QuarantineThreshold:      4,
+			RejectMessage:            "",
+			QuarantineMessage:        "",
+			AddSpamHeaders:           true,
+			SpamHeaderPrefix:         "X-ZPO-",
 		},
 	}
 }
@@ -269,34 +357,34 @@ func DefaultConfig() *Config {
 func LoadConfig(configPath string) (*Config, error) {
 	// Start with defaults
 	config := DefaultConfig()
-	
+
 	// If no config file specified, return defaults
 	if configPath == "" {
 		return config, nil
 	}
-	
+
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("config file not found: %s", configPath)
 	}
-	
+
 	// Read config file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %v", err)
 	}
-	
+
 	// Parse YAML
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %v", err)
 	}
-	
+
 	// Validate config
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %v", err)
 	}
-	
+
 	return config, nil
 }
 
@@ -307,19 +395,19 @@ func (c *Config) SaveConfig(configPath string) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %v", err)
 	}
-	
+
 	// Marshal to YAML
 	data, err := yaml.Marshal(c)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %v", err)
 	}
-	
+
 	// Write to file
 	err = os.WriteFile(configPath, data, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write config file: %v", err)
 	}
-	
+
 	return nil
 }
 
@@ -329,16 +417,16 @@ func (c *Config) Validate() error {
 	if c.Detection.SpamThreshold < 1 || c.Detection.SpamThreshold > 5 {
 		return fmt.Errorf("spam_threshold must be between 1 and 5")
 	}
-	
+
 	// Validate performance settings
 	if c.Performance.MaxConcurrentEmails < 1 {
 		return fmt.Errorf("max_concurrent_emails must be >= 1")
 	}
-	
+
 	if c.Performance.TimeoutMs < 100 {
 		return fmt.Errorf("timeout_ms must be >= 100")
 	}
-	
+
 	// Validate logging level
 	validLevels := []string{"debug", "info", "warn", "error"}
 	validLevel := false
@@ -351,7 +439,42 @@ func (c *Config) Validate() error {
 	if !validLevel {
 		return fmt.Errorf("invalid logging level: %s", c.Logging.Level)
 	}
-	
+
+	// Validate milter settings
+	if c.Milter.Enabled {
+		if c.Milter.Network != "tcp" && c.Milter.Network != "unix" {
+			return fmt.Errorf("milter network must be 'tcp' or 'unix'")
+		}
+
+		if c.Milter.Address == "" {
+			return fmt.Errorf("milter address cannot be empty when enabled")
+		}
+
+		if c.Milter.ReadTimeoutMs < 1000 {
+			return fmt.Errorf("milter read_timeout_ms must be >= 1000")
+		}
+
+		if c.Milter.WriteTimeoutMs < 1000 {
+			return fmt.Errorf("milter write_timeout_ms must be >= 1000")
+		}
+
+		if c.Milter.MaxConcurrentConnections < 1 {
+			return fmt.Errorf("milter max_concurrent_connections must be >= 1")
+		}
+
+		if c.Milter.RejectThreshold < 1 || c.Milter.RejectThreshold > 5 {
+			return fmt.Errorf("milter reject_threshold must be between 1 and 5")
+		}
+
+		if c.Milter.QuarantineThreshold < 1 || c.Milter.QuarantineThreshold > 5 {
+			return fmt.Errorf("milter quarantine_threshold must be between 1 and 5")
+		}
+
+		if c.Milter.CanQuarantine && c.Milter.QuarantineThreshold >= c.Milter.RejectThreshold {
+			return fmt.Errorf("milter quarantine_threshold must be less than reject_threshold")
+		}
+	}
+
 	return nil
 }
 
@@ -363,14 +486,14 @@ func (c *Config) IsWhitelisted(email, domain string) bool {
 			return true
 		}
 	}
-	
+
 	// Check domain whitelist
 	for _, whiteDomain := range c.Lists.WhitelistDomains {
 		if domain == whiteDomain {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -382,14 +505,14 @@ func (c *Config) IsBlacklisted(email, domain string) bool {
 			return true
 		}
 	}
-	
+
 	// Check domain blacklist
 	for _, blackDomain := range c.Lists.BlacklistDomains {
 		if domain == blackDomain {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -401,4 +524,4 @@ func (c *Config) IsTrustedDomain(domain string) bool {
 		}
 	}
 	return false
-} 
+}
