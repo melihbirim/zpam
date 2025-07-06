@@ -24,12 +24,12 @@ type FilterResults struct {
 
 // SpamFilter implements the ZPO spam detection algorithm
 type SpamFilter struct {
-	parser   *email.Parser
+	parser    *email.Parser
 	config    *config.Config
 	tracker   *tracker.FrequencyTracker
 	learner   *learning.WordFrequency
 	validator *headers.Validator
-	
+
 	// Legacy fields for backward compatibility
 	keywords SpamKeywords
 	weights  FeatureWeights
@@ -45,27 +45,27 @@ type SpamKeywords struct {
 // FeatureWeights defines the weights for different spam detection features
 type FeatureWeights struct {
 	// Content weights
-	SubjectKeywords    float64
-	BodyKeywords      float64
-	CapsRatio         float64
-	ExclamationRatio  float64
-	URLDensity        float64
-	HTMLRatio         float64
-	
+	SubjectKeywords  float64
+	BodyKeywords     float64
+	CapsRatio        float64
+	ExclamationRatio float64
+	URLDensity       float64
+	HTMLRatio        float64
+
 	// Technical weights
 	SuspiciousHeaders float64
 	AttachmentRisk    float64
 	DomainReputation  float64
 	EncodingIssues    float64
-	
+
 	// Behavioral weights
-	FromToMismatch    float64
-	SubjectLength     float64
-	FrequencyPenalty  float64
-	
+	FromToMismatch   float64
+	SubjectLength    float64
+	FrequencyPenalty float64
+
 	// Learning weights
-	WordFrequency     float64
-	
+	WordFrequency float64
+
 	// Header validation weights
 	HeaderValidation float64
 }
@@ -85,7 +85,7 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 		keywords: convertConfigKeywords(cfg.Detection.Keywords),
 		weights:  convertConfigWeights(cfg.Detection.Weights),
 	}
-	
+
 	// Initialize headers validator
 	if cfg.Headers.EnableSPF || cfg.Headers.EnableDKIM || cfg.Headers.EnableDMARC {
 		headersConfig := &headers.Config{
@@ -98,7 +98,7 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 			CacheSize:             cfg.Headers.CacheSize,
 			CacheTTL:              time.Duration(cfg.Headers.CacheTTLMin) * time.Minute,
 		}
-		
+
 		// Use default suspicious patterns
 		headersConfig.SuspiciousServers = []string{
 			"suspicious", "spam", "bulk", "mass", "marketing",
@@ -108,10 +108,10 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 			"unknown", "dynamic", "dhcp", "dial", "cable",
 			"dsl", "adsl", "pool", "client", "user",
 		}
-		
+
 		sf.validator = headers.NewValidator(headersConfig)
 	}
-	
+
 	// Initialize word frequency learner if enabled
 	if cfg.Learning.Enabled {
 		learningConfig := &learning.Config{
@@ -126,9 +126,9 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 			UseHeaderWords:    cfg.Learning.UseHeaderWords,
 			MaxVocabularySize: cfg.Learning.MaxVocabularySize,
 		}
-		
+
 		sf.learner = learning.NewWordFrequency(learningConfig)
-		
+
 		// Try to load existing model
 		if _, err := os.Stat(cfg.Learning.ModelPath); err == nil {
 			if err := sf.learner.LoadModel(cfg.Learning.ModelPath); err != nil {
@@ -136,7 +136,7 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 			}
 		}
 	}
-	
+
 	return sf
 }
 
@@ -145,7 +145,7 @@ func LoadConfigFromPath(configPath string) (*config.Config, error) {
 	if configPath == "" {
 		return config.DefaultConfig(), nil
 	}
-	
+
 	return config.LoadConfig(configPath)
 }
 
@@ -155,47 +155,57 @@ func (sf *SpamFilter) TestEmail(filepath string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse email: %v", err)
 	}
-	
+
 	score := sf.calculateSpamScore(email)
 	return sf.normalizeScore(score), nil
+}
+
+// CalculateSpamScore calculates the raw spam score for an email (public method for milter integration)
+func (sf *SpamFilter) CalculateSpamScore(email *email.Email) float64 {
+	return sf.calculateSpamScore(email)
+}
+
+// NormalizeScore converts raw score to 1-5 scale (public method for milter integration)
+func (sf *SpamFilter) NormalizeScore(rawScore float64) int {
+	return sf.normalizeScore(rawScore)
 }
 
 // ProcessEmails processes a directory of emails and filters spam
 func (sf *SpamFilter) ProcessEmails(inputPath, outputPath, spamPath string, threshold int) (*FilterResults, error) {
 	results := &FilterResults{}
-	
+
 	// Create output directories if they don't exist
 	if outputPath != "" {
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create output directory: %v", err)
 		}
 	}
-	
+
 	if spamPath != "" {
 		if err := os.MkdirAll(spamPath, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create spam directory: %v", err)
 		}
 	}
-	
+
 	// Walk through input directory
 	err := filepath.WalkDir(inputPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Skip directories and non-email files
 		if d.IsDir() || !sf.isEmailFile(path) {
 			return nil
 		}
-		
+
 		// Process email
 		score, err := sf.TestEmail(path)
 		if err != nil {
 			return fmt.Errorf("failed to process %s: %v", path, err)
 		}
-		
+
 		results.Total++
-		
+
 		// Move email to appropriate folder
 		if score >= threshold {
 			results.Spam++
@@ -214,17 +224,17 @@ func (sf *SpamFilter) ProcessEmails(inputPath, outputPath, spamPath string, thre
 				}
 			}
 		}
-		
+
 		return nil
 	})
-	
+
 	return results, err
 }
 
 // calculateSpamScore calculates raw spam score for an email
 func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 	var score float64
-	
+
 	// Check whitelist/blacklist first
 	domain := sf.extractDomain(email.From)
 	if sf.config != nil {
@@ -235,49 +245,90 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 			return 25 // Blacklisted emails are always spam
 		}
 	}
-	
+
+	// Debug: Track each feature's contribution
+	var debugScores []string
+
 	// Content-based scoring (if enabled)
 	if sf.config == nil || sf.config.Detection.Features.KeywordDetection {
-		score += sf.scoreKeywords(email.Subject, email.Body)
+		keywordScore := sf.scoreKeywords(email.Subject, email.Body)
+		score += keywordScore
+		debugScores = append(debugScores, fmt.Sprintf("keywords:%.2f", keywordScore))
 	}
-	
-	score += sf.scoreCapsRatio(email.Features.SubjectCapsRatio, email.Features.BodyCapsRatio)
-	score += sf.scoreExclamations(email.Features.SubjectExclamations, email.Features.BodyExclamations)
-	score += sf.scoreURLs(email.Features.BodyURLCount, email.Features.BodyLength)
-	score += sf.scoreHTML(email.Features.BodyHTMLRatio)
-	
+
+	capsScore := sf.scoreCapsRatio(email.Features.SubjectCapsRatio, email.Features.BodyCapsRatio)
+	score += capsScore
+	debugScores = append(debugScores, fmt.Sprintf("caps:%.2f", capsScore))
+
+	exclamScore := sf.scoreExclamations(email.Features.SubjectExclamations, email.Features.BodyExclamations)
+	score += exclamScore
+	debugScores = append(debugScores, fmt.Sprintf("exclamations:%.2f", exclamScore))
+
+	urlScore := sf.scoreURLs(email.Features.BodyURLCount, email.Features.BodyLength)
+	score += urlScore
+	debugScores = append(debugScores, fmt.Sprintf("urls:%.2f", urlScore))
+
+	htmlScore := sf.scoreHTML(email.Features.BodyHTMLRatio)
+	score += htmlScore
+	debugScores = append(debugScores, fmt.Sprintf("html:%.2f", htmlScore))
+
 	// Technical scoring (if enabled)
 	if sf.config == nil || sf.config.Detection.Features.HeaderAnalysis {
-		score += sf.scoreSuspiciousHeaders(email.Features.SuspiciousHeaders)
+		suspiciousScore := sf.scoreSuspiciousHeaders(email.Features.SuspiciousHeaders)
+		score += suspiciousScore
+		debugScores = append(debugScores, fmt.Sprintf("suspicious_headers:%.2f", suspiciousScore))
 	}
 	if sf.config == nil || sf.config.Detection.Features.AttachmentScan {
-		score += sf.scoreAttachments(email.Features.AttachmentCount, email.Attachments)
+		attachmentScore := sf.scoreAttachments(email.Features.AttachmentCount, email.Attachments)
+		score += attachmentScore
+		debugScores = append(debugScores, fmt.Sprintf("attachments:%.2f", attachmentScore))
 	}
 	if sf.config == nil || sf.config.Detection.Features.DomainCheck {
-		score += sf.scoreDomainReputation(email.Features.SenderDomainReputable)
+		domainScore := sf.scoreDomainReputation(email.Features.SenderDomainReputable)
+		score += domainScore
+		debugScores = append(debugScores, fmt.Sprintf("domain:%.2f", domainScore))
 	}
-	
-	score += sf.scoreEncodingIssues(email.Features.EncodingIssues)
-	
+
+	encodingScore := sf.scoreEncodingIssues(email.Features.EncodingIssues)
+	score += encodingScore
+	debugScores = append(debugScores, fmt.Sprintf("encoding:%.2f", encodingScore))
+
 	// Behavioral scoring
-	score += sf.scoreFromToMismatch(email.Features.FromToMismatch)
-	score += sf.scoreSubjectLength(email.Features.SubjectLength)
-	
+	mismatchScore := sf.scoreFromToMismatch(email.Features.FromToMismatch)
+	score += mismatchScore
+	debugScores = append(debugScores, fmt.Sprintf("from_to_mismatch:%.2f", mismatchScore))
+
+	lengthScore := sf.scoreSubjectLength(email.Features.SubjectLength)
+	score += lengthScore
+	debugScores = append(debugScores, fmt.Sprintf("subject_length:%.2f", lengthScore))
+
 	// Word frequency learning scoring (if enabled)
 	if sf.learner != nil {
-		score += sf.scoreLearning(email.Subject, email.Body)
+		learningScore := sf.scoreLearning(email.Subject, email.Body)
+		score += learningScore
+		debugScores = append(debugScores, fmt.Sprintf("learning:%.2f", learningScore))
 	}
-	
+
 	// Frequency scoring (if enabled)
 	if sf.config == nil || sf.config.Detection.Features.FrequencyTracking {
-		score += sf.scoreFrequency(email.From, domain)
+		frequencyScore := sf.scoreFrequency(email.From, domain)
+		score += frequencyScore
+		debugScores = append(debugScores, fmt.Sprintf("frequency:%.2f", frequencyScore))
 	}
-	
+
 	// Headers validation scoring (if enabled)
 	if sf.validator != nil {
-		score += sf.scoreHeaders(email.Headers)
+		headerScore := sf.scoreHeaders(email.Headers)
+		score += headerScore
+		debugScores = append(debugScores, fmt.Sprintf("headers:%.2f", headerScore))
 	}
-	
+
+	// Log debug info if debugging enabled
+	if sf.config != nil && sf.config.Logging.Level == "debug" {
+		fmt.Printf("[DEBUG SPAM SCORE] From:%s Total:%.2f [%s]\n",
+			email.From, score, strings.Join(debugScores, " "))
+	}
+
 	return score
 }
 
@@ -285,28 +336,28 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 func (sf *SpamFilter) scoreKeywords(subject, body string) float64 {
 	text := strings.ToLower(subject + " " + body)
 	var score float64
-	
+
 	// High-risk keywords
 	for _, keyword := range sf.keywords.HighRisk {
 		if strings.Contains(text, keyword) {
 			score += sf.weights.SubjectKeywords * 3.0
 		}
 	}
-	
+
 	// Medium-risk keywords
 	for _, keyword := range sf.keywords.MediumRisk {
 		if strings.Contains(text, keyword) {
 			score += sf.weights.BodyKeywords * 2.0
 		}
 	}
-	
+
 	// Low-risk keywords
 	for _, keyword := range sf.keywords.LowRisk {
 		if strings.Contains(text, keyword) {
 			score += sf.weights.BodyKeywords * 1.0
 		}
 	}
-	
+
 	return score
 }
 
@@ -341,7 +392,7 @@ func (sf *SpamFilter) scoreURLs(urlCount, bodyLength int) float64 {
 	if bodyLength == 0 {
 		return 0
 	}
-	
+
 	density := float64(urlCount) / float64(bodyLength) * 1000 // URLs per 1000 chars
 	if density > 10 {
 		return sf.weights.URLDensity * 4.0
@@ -371,14 +422,14 @@ func (sf *SpamFilter) scoreSuspiciousHeaders(count int) float64 {
 // scoreAttachments scores based on attachments
 func (sf *SpamFilter) scoreAttachments(count int, attachments []email.Attachment) float64 {
 	score := sf.weights.AttachmentRisk * float64(count)
-	
+
 	// Additional scoring for suspicious attachment types
 	for _, attachment := range attachments {
 		if sf.isSuspiciousAttachment(attachment) {
 			score += sf.weights.AttachmentRisk * 2.0
 		}
 	}
-	
+
 	return score
 }
 
@@ -438,13 +489,13 @@ func (sf *SpamFilter) normalizeScore(rawScore float64) int {
 func (sf *SpamFilter) isEmailFile(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	emailExts := []string{".eml", ".msg", ".txt", ".email"}
-	
+
 	for _, emailExt := range emailExts {
 		if ext == emailExt {
 			return true
 		}
 	}
-	
+
 	// Check if it's a file without extension (common for email files)
 	return ext == ""
 }
@@ -452,14 +503,14 @@ func (sf *SpamFilter) isEmailFile(path string) bool {
 // isSuspiciousAttachment checks if an attachment is suspicious
 func (sf *SpamFilter) isSuspiciousAttachment(attachment email.Attachment) bool {
 	suspicious := []string{".exe", ".scr", ".bat", ".com", ".pif", ".vbs", ".js"}
-	
+
 	ext := strings.ToLower(filepath.Ext(attachment.Filename))
 	for _, suspExt := range suspicious {
 		if ext == suspExt {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -493,20 +544,20 @@ func getDefaultKeywords() SpamKeywords {
 func getOptimizedWeights() FeatureWeights {
 	return FeatureWeights{
 		SubjectKeywords:   3.0,
-		BodyKeywords:     2.0,
-		CapsRatio:        1.5,
-		ExclamationRatio: 1.0,
-		URLDensity:       2.5,
-		HTMLRatio:        1.0,
+		BodyKeywords:      2.0,
+		CapsRatio:         1.5,
+		ExclamationRatio:  1.0,
+		URLDensity:        2.5,
+		HTMLRatio:         1.0,
 		SuspiciousHeaders: 2.0,
-		AttachmentRisk:   1.5,
-		DomainReputation: 3.0,
-		EncodingIssues:   1.0,
-		FromToMismatch:   2.0,
-		SubjectLength:    0.5,
-		FrequencyPenalty: 2.0,
-		WordFrequency:    2.0,
-		HeaderValidation: 2.5,
+		AttachmentRisk:    1.5,
+		DomainReputation:  3.0,
+		EncodingIssues:    1.0,
+		FromToMismatch:    2.0,
+		SubjectLength:     0.5,
+		FrequencyPenalty:  2.0,
+		WordFrequency:     2.0,
+		HeaderValidation:  2.5,
 	}
 }
 
@@ -554,16 +605,16 @@ func (sf *SpamFilter) scoreFrequency(email, domain string) float64 {
 	if sf.tracker == nil {
 		return 0
 	}
-	
+
 	// Track this sender (we don't know if it's spam yet, so pass false)
 	result := sf.tracker.TrackSender(email, domain, false)
-	
+
 	// Apply frequency penalty weight
 	weight := sf.weights.FrequencyPenalty
 	if sf.config != nil {
 		weight = sf.config.Detection.Weights.FrequencyPenalty
 	}
-	
+
 	return result.FrequencyScore * weight
 }
 
@@ -572,10 +623,10 @@ func (sf *SpamFilter) scoreLearning(subject, body string) float64 {
 	if sf.learner == nil {
 		return 0
 	}
-	
+
 	// Get spam probability from learner
 	spamProb := sf.learner.ClassifyText(subject, body)
-	
+
 	// Convert probability to score (0-1 -> 0-10)
 	// Values > 0.5 are considered spammy
 	if spamProb > 0.5 {
@@ -585,7 +636,7 @@ func (sf *SpamFilter) scoreLearning(subject, body string) float64 {
 		}
 		return (spamProb - 0.5) * 20 * weight // Scale to 0-10
 	}
-	
+
 	return 0
 }
 
@@ -594,61 +645,81 @@ func (sf *SpamFilter) scoreHeaders(headers map[string]string) float64 {
 	if sf.validator == nil {
 		return 0
 	}
-	
+
 	// Validate headers
 	result := sf.validator.ValidateHeaders(headers)
-	
-	// Calculate score based on validation results
+
+	// Calculate score based on validation results using SpamAssassin-inspired penalties
 	score := 0.0
-	
-	// Authentication score contribution (inverse scoring - lower auth score = higher spam score)
+
+	// Get penalty values from config (SpamAssassin-inspired, much more reasonable)
+	spfFailPenalty := 0.9      // Default SpamAssassin value
+	dkimMissingPenalty := 1.0  // Reasonable penalty
+	dmarcMissingPenalty := 1.5 // Moderate penalty
+	authWeight := 1.0          // Reduced from 2.5
+	suspiciousWeight := 1.0    // Reduced from 2.5
+
+	// Use config values if available
+	if sf.config != nil {
+		// Check if we have SpamAssassin-inspired config values
+		if sf.config.Headers.SPFFailPenalty != 0 {
+			spfFailPenalty = sf.config.Headers.SPFFailPenalty
+		}
+		if sf.config.Headers.DKIMMissingPenalty != 0 {
+			dkimMissingPenalty = sf.config.Headers.DKIMMissingPenalty
+		}
+		if sf.config.Headers.DMARCMissingPenalty != 0 {
+			dmarcMissingPenalty = sf.config.Headers.DMARCMissingPenalty
+		}
+		authWeight = sf.config.Headers.AuthWeight
+		suspiciousWeight = sf.config.Headers.SuspiciousWeight
+	}
+
+	// Authentication scoring (much more reasonable than before)
 	authScore := result.AuthScore // 0-100
 	if authScore < 50 {
-		score += (50 - authScore) * 0.2 // Max 10 points for very poor auth
+		// Reduced from 0.2 to 0.05 (was adding up to 10 points, now max 2.5)
+		score += (50 - authScore) * 0.05
 	}
-	
-	// Suspicious score contribution (direct scoring - higher suspicious score = higher spam score)
+
+	// Suspicious score (much more reasonable)
 	suspiciousScore := result.SuspiciScore // 0-100
-	score += suspiciousScore * 0.15 // Max 15 points for very suspicious
-	
-	// SPF failures
+	// Reduced from 0.15 to 0.03 (was adding up to 15 points, now max 3)
+	score += suspiciousScore * 0.03
+
+	// SPF failures (SpamAssassin-inspired penalties)
 	switch result.SPF.Result {
 	case "fail":
-		score += 8.0
+		score += spfFailPenalty // 0.9 like SpamAssassin (was 8.0!)
 	case "softfail":
-		score += 4.0
+		score += spfFailPenalty * 0.5 // Half penalty for softfail
 	case "temperror", "permerror":
-		score += 2.0
+		score += spfFailPenalty * 0.25 // Quarter penalty for errors
 	}
-	
-	// DKIM failures
+
+	// DKIM failures (reasonable penalties)
 	if !result.DKIM.Valid {
-		score += 6.0
+		score += dkimMissingPenalty // 1.0 (was 6.0!)
 	}
-	
-	// DMARC failures
+
+	// DMARC failures (moderate penalties)
 	if !result.DMARC.Valid {
-		score += 7.0
+		score += dmarcMissingPenalty // 1.5 (was 7.0!)
 	}
-	
-	// Routing anomalies
-	score += float64(len(result.Routing.SuspiciousHops)) * 3.0
-	score += float64(len(result.Routing.OpenRelays)) * 4.0
-	score += float64(len(result.Routing.ReverseDNSIssues)) * 2.0
-	
-	// Excessive routing hops
+
+	// Routing anomalies (slightly reduced)
+	score += float64(len(result.Routing.SuspiciousHops)) * 2.0   // Was 3.0
+	score += float64(len(result.Routing.OpenRelays)) * 2.5       // Was 4.0
+	score += float64(len(result.Routing.ReverseDNSIssues)) * 1.0 // Was 2.0
+
+	// Excessive routing hops (unchanged - this is reasonable)
 	if result.Routing.HopCount > 10 {
-		score += float64(result.Routing.HopCount-10) * 1.0
+		score += float64(result.Routing.HopCount-10) * 0.5 // Reduced from 1.0
 	}
-	
-	// Header anomalies
-	score += float64(len(result.Anomalies)) * 2.0
-	
-	// Apply weight from config
-	weight := sf.weights.HeaderValidation
-	if sf.config != nil {
-		weight = sf.config.Detection.Weights.HeaderValidation
-	}
-	
-	return score * weight
-} 
+
+	// Header anomalies (slightly reduced)
+	score += float64(len(result.Anomalies)) * 1.0 // Was 2.0
+
+	// Apply weight from config (now much more reasonable)
+	return score * authWeight * suspiciousWeight
+}
