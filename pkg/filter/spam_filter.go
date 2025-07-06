@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/zpo/spam-filter/pkg/config"
@@ -187,7 +189,8 @@ func (sf *SpamFilter) ProcessEmails(inputPath, outputPath, spamPath string, thre
 		}
 	}
 
-	// Walk through input directory
+	// Collect all email files first
+	var emailFiles []string
 	err := filepath.WalkDir(inputPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -198,43 +201,162 @@ func (sf *SpamFilter) ProcessEmails(inputPath, outputPath, spamPath string, thre
 			return nil
 		}
 
-		// Process email
-		score, err := sf.TestEmail(path)
-		if err != nil {
-			return fmt.Errorf("failed to process %s: %v", path, err)
-		}
-
-		results.Total++
-
-		// Move email to appropriate folder
-		if score >= threshold {
-			results.Spam++
-			if spamPath != "" {
-				destPath := filepath.Join(spamPath, filepath.Base(path))
-				if err := sf.moveFile(path, destPath); err != nil {
-					return fmt.Errorf("failed to move spam email: %v", err)
-				}
-			}
-		} else {
-			results.Ham++
-			if outputPath != "" {
-				destPath := filepath.Join(outputPath, filepath.Base(path))
-				if err := sf.moveFile(path, destPath); err != nil {
-					return fmt.Errorf("failed to move clean email: %v", err)
-				}
-			}
-		}
-
+		emailFiles = append(emailFiles, path)
 		return nil
 	})
 
-	return results, err
+	if err != nil {
+		return nil, err
+	}
+
+	if len(emailFiles) == 0 {
+		return results, nil
+	}
+
+	// Get concurrency setting from config
+	maxConcurrent := 20 // Default
+	if sf.config != nil && sf.config.Performance.MaxConcurrentEmails > 0 {
+		maxConcurrent = sf.config.Performance.MaxConcurrentEmails
+	}
+
+	// Process emails in parallel
+	return sf.processEmailsParallel(emailFiles, outputPath, spamPath, threshold, maxConcurrent)
+}
+
+// processEmailsParallel processes emails using parallel worker goroutines
+func (sf *SpamFilter) processEmailsParallel(emailFiles []string, outputPath, spamPath string, threshold, maxConcurrent int) (*FilterResults, error) {
+	// Results tracking with atomic operations for thread safety
+	var totalProcessed, spamDetected, hamDetected int32
+	var processingErrors int32
+
+	// Create worker pool
+	type EmailJob struct {
+		FilePath string
+		Index    int
+	}
+
+	type EmailResult struct {
+		FilePath    string
+		Score       int
+		IsSpam      bool
+		Error       error
+		ProcessTime time.Duration
+	}
+
+	// Channels for work distribution
+	jobChan := make(chan EmailJob, len(emailFiles))
+	resultChan := make(chan EmailResult, len(emailFiles))
+
+	// Worker pool with goroutines
+	var workerWG sync.WaitGroup
+
+	// Start worker goroutines
+	for i := 0; i < maxConcurrent; i++ {
+		workerWG.Add(1)
+		go func(workerID int) {
+			defer workerWG.Done()
+
+			for job := range jobChan {
+				startTime := time.Now()
+
+				// Process single email
+				score, err := sf.TestEmail(job.FilePath)
+				processingTime := time.Since(startTime)
+
+				// Send result
+				resultChan <- EmailResult{
+					FilePath:    job.FilePath,
+					Score:       score,
+					IsSpam:      score >= threshold,
+					Error:       err,
+					ProcessTime: processingTime,
+				}
+
+				// Update counters atomically
+				atomic.AddInt32(&totalProcessed, 1)
+
+				if err != nil {
+					atomic.AddInt32(&processingErrors, 1)
+				} else if score >= threshold {
+					atomic.AddInt32(&spamDetected, 1)
+				} else {
+					atomic.AddInt32(&hamDetected, 1)
+				}
+			}
+		}(i)
+	}
+
+	// Send jobs to workers
+	go func() {
+		defer close(jobChan)
+		for i, filePath := range emailFiles {
+			jobChan <- EmailJob{
+				FilePath: filePath,
+				Index:    i,
+			}
+		}
+	}()
+
+	// Collect results and handle file moving
+	go func() {
+		defer close(resultChan)
+		workerWG.Wait()
+	}()
+
+	// Process results as they come in (file moving can also be parallel)
+	var moveWG sync.WaitGroup
+	var moveErrors int32
+
+	for result := range resultChan {
+		if result.Error != nil {
+			fmt.Printf("Warning: Failed to process %s: %v\n", result.FilePath, result.Error)
+			continue
+		}
+
+		// Move file in parallel (non-blocking)
+		moveWG.Add(1)
+		go func(res EmailResult) {
+			defer moveWG.Done()
+
+			var destPath string
+			if res.IsSpam && spamPath != "" {
+				destPath = filepath.Join(spamPath, filepath.Base(res.FilePath))
+			} else if !res.IsSpam && outputPath != "" {
+				destPath = filepath.Join(outputPath, filepath.Base(res.FilePath))
+			}
+
+			if destPath != "" {
+				if err := sf.moveFile(res.FilePath, destPath); err != nil {
+					fmt.Printf("Warning: Failed to move %s: %v\n", res.FilePath, err)
+					atomic.AddInt32(&moveErrors, 1)
+				}
+			}
+		}(result)
+	}
+
+	// Wait for all file moves to complete
+	moveWG.Wait()
+
+	// Build final results
+	finalResults := &FilterResults{
+		Total: int(atomic.LoadInt32(&totalProcessed)),
+		Spam:  int(atomic.LoadInt32(&spamDetected)),
+		Ham:   int(atomic.LoadInt32(&hamDetected)),
+	}
+
+	// Report any errors
+	if errors := atomic.LoadInt32(&processingErrors); errors > 0 {
+		fmt.Printf("Warning: %d emails failed to process\n", errors)
+	}
+	if moveErr := atomic.LoadInt32(&moveErrors); moveErr > 0 {
+		fmt.Printf("Warning: %d emails failed to move\n", moveErr)
+	}
+
+	return finalResults, nil
 }
 
 // calculateSpamScore calculates raw spam score for an email
 func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
-	var score float64
-
 	// Check whitelist/blacklist first
 	domain := sf.extractDomain(email.From)
 	if sf.config != nil {
@@ -246,90 +368,156 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 		}
 	}
 
-	// Debug: Track each feature's contribution
-	var debugScores []string
+	// Parallel feature scoring for maximum performance
+	type FeatureScore struct {
+		Name  string
+		Score float64
+	}
 
-	// Content-based scoring (if enabled)
+	// Create channels for parallel feature calculation
+	scoreChan := make(chan FeatureScore, 12) // Buffer for all features
+	var wg sync.WaitGroup
+
+	// Content-based scoring (parallel)
 	if sf.config == nil || sf.config.Detection.Features.KeywordDetection {
-		keywordScore := sf.scoreKeywords(email.Subject, email.Body)
-		score += keywordScore
-		debugScores = append(debugScores, fmt.Sprintf("keywords:%.2f", keywordScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreKeywords(email.Subject, email.Body)
+			scoreChan <- FeatureScore{"keywords", score}
+		}()
 	}
 
-	capsScore := sf.scoreCapsRatio(email.Features.SubjectCapsRatio, email.Features.BodyCapsRatio)
-	score += capsScore
-	debugScores = append(debugScores, fmt.Sprintf("caps:%.2f", capsScore))
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreCapsRatio(email.Features.SubjectCapsRatio, email.Features.BodyCapsRatio)
+		scoreChan <- FeatureScore{"caps", score}
+	}()
 
-	exclamScore := sf.scoreExclamations(email.Features.SubjectExclamations, email.Features.BodyExclamations)
-	score += exclamScore
-	debugScores = append(debugScores, fmt.Sprintf("exclamations:%.2f", exclamScore))
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreExclamations(email.Features.SubjectExclamations, email.Features.BodyExclamations)
+		scoreChan <- FeatureScore{"exclamations", score}
+	}()
 
-	urlScore := sf.scoreURLs(email.Features.BodyURLCount, email.Features.BodyLength)
-	score += urlScore
-	debugScores = append(debugScores, fmt.Sprintf("urls:%.2f", urlScore))
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreURLs(email.Features.BodyURLCount, email.Features.BodyLength)
+		scoreChan <- FeatureScore{"urls", score}
+	}()
 
-	htmlScore := sf.scoreHTML(email.Features.BodyHTMLRatio)
-	score += htmlScore
-	debugScores = append(debugScores, fmt.Sprintf("html:%.2f", htmlScore))
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreHTML(email.Features.BodyHTMLRatio)
+		scoreChan <- FeatureScore{"html", score}
+	}()
 
-	// Technical scoring (if enabled)
+	// Technical scoring (parallel)
 	if sf.config == nil || sf.config.Detection.Features.HeaderAnalysis {
-		suspiciousScore := sf.scoreSuspiciousHeaders(email.Features.SuspiciousHeaders)
-		score += suspiciousScore
-		debugScores = append(debugScores, fmt.Sprintf("suspicious_headers:%.2f", suspiciousScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreSuspiciousHeaders(email.Features.SuspiciousHeaders)
+			scoreChan <- FeatureScore{"suspicious_headers", score}
+		}()
 	}
+
 	if sf.config == nil || sf.config.Detection.Features.AttachmentScan {
-		attachmentScore := sf.scoreAttachments(email.Features.AttachmentCount, email.Attachments)
-		score += attachmentScore
-		debugScores = append(debugScores, fmt.Sprintf("attachments:%.2f", attachmentScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreAttachments(email.Features.AttachmentCount, email.Attachments)
+			scoreChan <- FeatureScore{"attachments", score}
+		}()
 	}
+
 	if sf.config == nil || sf.config.Detection.Features.DomainCheck {
-		domainScore := sf.scoreDomainReputation(email.Features.SenderDomainReputable)
-		score += domainScore
-		debugScores = append(debugScores, fmt.Sprintf("domain:%.2f", domainScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreDomainReputation(email.Features.SenderDomainReputable)
+			scoreChan <- FeatureScore{"domain", score}
+		}()
 	}
 
-	encodingScore := sf.scoreEncodingIssues(email.Features.EncodingIssues)
-	score += encodingScore
-	debugScores = append(debugScores, fmt.Sprintf("encoding:%.2f", encodingScore))
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreEncodingIssues(email.Features.EncodingIssues)
+		scoreChan <- FeatureScore{"encoding", score}
+	}()
 
-	// Behavioral scoring
-	mismatchScore := sf.scoreFromToMismatch(email.Features.FromToMismatch)
-	score += mismatchScore
-	debugScores = append(debugScores, fmt.Sprintf("from_to_mismatch:%.2f", mismatchScore))
+	// Behavioral scoring (parallel)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreFromToMismatch(email.Features.FromToMismatch)
+		scoreChan <- FeatureScore{"from_to_mismatch", score}
+	}()
 
-	lengthScore := sf.scoreSubjectLength(email.Features.SubjectLength)
-	score += lengthScore
-	debugScores = append(debugScores, fmt.Sprintf("subject_length:%.2f", lengthScore))
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		score := sf.scoreSubjectLength(email.Features.SubjectLength)
+		scoreChan <- FeatureScore{"subject_length", score}
+	}()
 
 	// Word frequency learning scoring (if enabled)
 	if sf.learner != nil {
-		learningScore := sf.scoreLearning(email.Subject, email.Body)
-		score += learningScore
-		debugScores = append(debugScores, fmt.Sprintf("learning:%.2f", learningScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreLearning(email.Subject, email.Body)
+			scoreChan <- FeatureScore{"learning", score}
+		}()
 	}
 
 	// Frequency scoring (if enabled)
 	if sf.config == nil || sf.config.Detection.Features.FrequencyTracking {
-		frequencyScore := sf.scoreFrequency(email.From, domain)
-		score += frequencyScore
-		debugScores = append(debugScores, fmt.Sprintf("frequency:%.2f", frequencyScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreFrequency(email.From, domain)
+			scoreChan <- FeatureScore{"frequency", score}
+		}()
 	}
 
-	// Headers validation scoring (if enabled)
+	// Headers validation scoring (if enabled) - this might take longer due to DNS
 	if sf.validator != nil {
-		headerScore := sf.scoreHeaders(email.Headers)
-		score += headerScore
-		debugScores = append(debugScores, fmt.Sprintf("headers:%.2f", headerScore))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := sf.scoreHeaders(email.Headers)
+			scoreChan <- FeatureScore{"headers", score}
+		}()
+	}
+
+	// Close channel when all goroutines complete
+	go func() {
+		wg.Wait()
+		close(scoreChan)
+	}()
+
+	// Collect results from parallel feature scoring
+	var totalScore float64
+	var debugScores []string
+
+	for featureScore := range scoreChan {
+		totalScore += featureScore.Score
+		debugScores = append(debugScores, fmt.Sprintf("%s:%.2f", featureScore.Name, featureScore.Score))
 	}
 
 	// Log debug info if debugging enabled
 	if sf.config != nil && sf.config.Logging.Level == "debug" {
 		fmt.Printf("[DEBUG SPAM SCORE] From:%s Total:%.2f [%s]\n",
-			email.From, score, strings.Join(debugScores, " "))
+			email.From, totalScore, strings.Join(debugScores, " "))
 	}
 
-	return score
+	return totalScore
 }
 
 // scoreKeywords scores based on spam keywords

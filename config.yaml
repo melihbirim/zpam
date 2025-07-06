@@ -107,10 +107,14 @@ lists:
     - "amazon.com"
 
 performance:
-  max_concurrent_emails: 10
-  timeout_ms: 5000
-  cache_size: 1000
+  max_concurrent_emails: 20    # Parallel email processing (20 workers for batch processing)
+  timeout_ms: 500               # Faster timeout for parallel execution  
+  cache_size: 5000              # Larger cache for parallel workload
   batch_size: 100
+  
+  # Parallel execution settings
+  enable_parallel_features: true   # Enable parallel feature scoring within each email
+  parallel_dns_workers: 10         # DNS async operations (configured in headers section)
 
 logging:
   level: "debug"  # debug, info, warn, error
