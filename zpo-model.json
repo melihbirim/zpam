@@ -240,7 +240,7 @@
   "total_ham_words": 20832,
   "total_spam_emails": 300,
   "total_ham_emails": 700,
-  "last_trained": "2025-07-05T02:22:00.03549+01:00",
+  "last_trained": "2025-07-05T18:00:47.83897+01:00",
   "config": {
     "min_word_length": 3,
     "max_word_length": 20,

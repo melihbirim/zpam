@@ -1,0 +1,157 @@
+# ZPO Spam Filter Configuration - Optimized DNS Caching
+# This configuration enables SPF/DKIM/DMARC validation with aggressive caching
+# for improved performance
+
+detection:
+  spam_threshold: 4  # Emails scoring 4-5 are moved to spam
+  
+  weights:
+    subject_keywords: 3.0
+    body_keywords: 2.0
+    caps_ratio: 1.5
+    exclamation_ratio: 1.0
+    url_density: 2.5
+    html_ratio: 1.0
+    suspicious_headers: 2.0
+    attachment_risk: 1.5
+    domain_reputation: 3.0
+    encoding_issues: 1.0
+    from_to_mismatch: 2.0
+    subject_length: 0.5
+    frequency_penalty: 2.0
+    word_frequency: 2.0
+    header_validation: 1.5  # Moderate weight for cached validation
+  
+  keywords:
+    high_risk:
+      - "free money"
+      - "get rich quick"
+      - "make money fast"
+      - "guaranteed income"
+      - "no risk"
+      - "act now"
+      - "limited time"
+      - "urgent"
+      - "congratulations"
+      - "you have won"
+      - "lottery"
+      - "inheritance"
+      - "nigerian prince"
+      - "viagra"
+      - "cialis"
+      - "pharmacy"
+      - "prescription"
+    
+    medium_risk:
+      - "click here"
+      - "visit our website"
+      - "special offer"
+      - "discount"
+      - "save money"
+      - "credit"
+      - "loan"
+      - "mortgage"
+      - "insurance"
+      - "weight loss"
+      - "diet"
+      - "lose weight"
+      - "earn extra"
+    
+    low_risk:
+      - "free"
+      - "offer"
+      - "deal"
+      - "sale"
+      - "promotion"
+      - "bonus"
+      - "gift"
+      - "prize"
+      - "winner"
+      - "selected"
+      - "opportunity"
+  
+  features:
+    keyword_detection: true
+    header_analysis: true
+    attachment_scan: true
+    domain_check: true
+    frequency_tracking: true
+    learning_mode: false
+
+lists:
+  # Whitelist - these emails/domains are always trusted
+  whitelist_emails: []
+  whitelist_domains: []
+  
+  # Blacklist - these emails/domains are always spam
+  blacklist_emails: []
+  blacklist_domains: []
+  
+  # Trusted domains - reputable email providers
+  trusted_domains:
+    - "gmail.com"
+    - "yahoo.com"
+    - "outlook.com"
+    - "hotmail.com"
+    - "apple.com"
+    - "microsoft.com"
+    - "google.com"
+    - "amazon.com"
+
+performance:
+  max_concurrent_emails: 10
+  timeout_ms: 2000    # Balanced timeout for cached operations
+  cache_size: 1000
+  batch_size: 100
+
+logging:
+  level: "info"  # debug, info, warn, error
+  file: ""       # empty = stdout
+  format: "text" # text or json
+  max_size_mb: 10
+  max_backups: 3 
+
+# Word frequency learning settings
+learning:
+  enabled: true               # Enable Bayesian word learning
+  model_path: "zpo-model.json" # Path to save/load learned model
+  min_word_length: 3          # Minimum word length for learning
+  max_word_length: 20         # Maximum word length for learning
+  case_sensitive: false       # Whether to preserve case
+  spam_threshold: 0.7         # Spam probability threshold
+  min_word_count: 2           # Minimum occurrences to consider a word
+  smoothing_factor: 1.0       # Laplace smoothing factor
+  use_subject_words: true     # Learn from email subjects
+  use_body_words: true        # Learn from email bodies
+  use_header_words: false     # Learn from email headers
+  max_vocabulary_size: 10000  # Maximum vocabulary size
+  auto_train: false           # Automatically train on classified emails
+
+# Email headers validation settings - OPTIMIZED WITH CACHING
+headers:
+  enable_spf: true            # Enable SPF validation with caching
+  enable_dkim: true           # Enable DKIM validation with caching
+  enable_dmarc: true          # Enable DMARC validation with caching
+  dns_timeout_ms: 2000        # Reasonable timeout for cached operations
+  max_hop_count: 15           # Maximum routing hops before suspicious
+  suspicious_server_score: 75 # Threshold for suspicious server detection
+  auth_weight: 1.5            # Moderate weight for authentication scoring
+  suspicious_weight: 2.0      # Weight for suspicious activity scoring
+  cache_size: 5000            # Large cache for DNS lookups (5000 entries)
+  cache_ttl_min: 30           # Cache TTL: 30 minutes (balance between freshness and performance)
+  
+  # Cache optimization settings
+  cache_cleanup_interval_min: 5    # Cleanup expired entries every 5 minutes
+  cache_max_memory_mb: 50          # Maximum memory usage for all caches
+  cache_hit_rate_threshold: 70     # Warn if hit rate drops below 70%
+  
+  # Async DNS Configuration - OPTIMIZED FOR CACHING
+  enable_async_dns: true          # Enable non-blocking DNS operations
+  async_dns_workers: 15           # Higher worker count for concurrent requests
+  use_internal_dns: false         # Use real DNS with aggressive caching
+  
+  # Performance monitoring
+  enable_cache_stats: true         # Include cache statistics in results
+  log_cache_performance: true      # Log cache performance metrics
+  cache_stats_interval_min: 10     # Report cache stats every 10 minutes
+  dns_performance_threshold_ms: 500 # Alert if DNS takes longer than 500ms 

@@ -138,3 +138,13 @@ headers:
   suspicious_weight: 2.5      # Weight for suspicious activity scoring
   cache_size: 1000            # Cache size for DNS lookups
   cache_ttl_min: 60           # Cache TTL in minutes
+  
+  # Async DNS Configuration
+  enable_async_dns: false     # Enable non-blocking DNS operations
+  async_dns_workers: 10       # Number of async DNS worker goroutines
+  use_internal_dns: false     # Use internal DNS test server (for testing)
+  
+  # Performance monitoring
+  enable_cache_stats: true    # Enable cache performance statistics
+  log_cache_performance: false # Log cache performance metrics
+  dns_performance_threshold_ms: 1000 # Alert if DNS takes longer than this
