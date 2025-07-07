@@ -30,6 +30,9 @@ type Config struct {
 
 	// Milter server settings
 	Milter MilterConfig `yaml:"milter"`
+
+	// Plugin system settings
+	Plugins PluginsConfig `yaml:"plugins"`
 }
 
 // DetectionConfig contains spam detection parameters
@@ -170,6 +173,31 @@ type HeadersConfig struct {
 	// Cache settings
 	CacheSize   int `yaml:"cache_size"`
 	CacheTTLMin int `yaml:"cache_ttl_min"`
+}
+
+// PluginsConfig contains plugin system settings
+type PluginsConfig struct {
+	// Global plugin settings
+	Enabled       bool   `yaml:"enabled"`        // Enable plugin system
+	Timeout       int    `yaml:"timeout_ms"`     // Plugin execution timeout
+	MaxConcurrent int    `yaml:"max_concurrent"` // Max concurrent plugin executions
+	ScoreMethod   string `yaml:"score_method"`   // How to combine scores: "weighted", "max", "average", "consensus"
+
+	// Plugin-specific configurations
+	SpamAssassin    PluginConfig `yaml:"spamassassin"`
+	Rspamd          PluginConfig `yaml:"rspamd"`
+	CustomRules     PluginConfig `yaml:"custom_rules"`
+	VirusTotal      PluginConfig `yaml:"virustotal"`
+	MachineLearning PluginConfig `yaml:"machine_learning"`
+}
+
+// PluginConfig contains individual plugin settings
+type PluginConfig struct {
+	Enabled  bool                   `yaml:"enabled"`
+	Weight   float64                `yaml:"weight"`     // Weight for score combination
+	Priority int                    `yaml:"priority"`   // Execution priority (lower = higher priority)
+	Timeout  int                    `yaml:"timeout_ms"` // Individual plugin timeout
+	Settings map[string]interface{} `yaml:"settings"`   // Plugin-specific settings
 }
 
 // MilterConfig contains milter server settings
@@ -349,6 +377,63 @@ func DefaultConfig() *Config {
 			QuarantineMessage:        "",
 			AddSpamHeaders:           true,
 			SpamHeaderPrefix:         "X-ZPO-",
+		},
+		Plugins: PluginsConfig{
+			Enabled:       false,      // Disabled by default
+			Timeout:       5000,       // 5 seconds timeout
+			MaxConcurrent: 3,          // Max 3 plugins running simultaneously
+			ScoreMethod:   "weighted", // Use weighted scoring by default
+			SpamAssassin: PluginConfig{
+				Enabled:  false,
+				Weight:   2.0,
+				Priority: 1,
+				Timeout:  5000,
+				Settings: map[string]interface{}{
+					"executable": "spamc",
+					"host":       "localhost",
+					"port":       783,
+					"max_size":   10485760, // 10MB
+				},
+			},
+			Rspamd: PluginConfig{
+				Enabled:  false,
+				Weight:   2.0,
+				Priority: 2,
+				Timeout:  3000,
+				Settings: map[string]interface{}{
+					"url":      "http://localhost:11334",
+					"password": "",
+				},
+			},
+			CustomRules: PluginConfig{
+				Enabled:  false,
+				Weight:   1.5,
+				Priority: 3,
+				Timeout:  1000,
+				Settings: map[string]interface{}{
+					"rules": []interface{}{},
+				},
+			},
+			VirusTotal: PluginConfig{
+				Enabled:  false,
+				Weight:   3.0,
+				Priority: 4,
+				Timeout:  10000,
+				Settings: map[string]interface{}{
+					"api_key": "",
+					"timeout": 10000,
+				},
+			},
+			MachineLearning: PluginConfig{
+				Enabled:  false,
+				Weight:   2.5,
+				Priority: 5,
+				Timeout:  5000,
+				Settings: map[string]interface{}{
+					"model_path": "",
+					"threshold":  0.7,
+				},
+			},
 		},
 	}
 }

@@ -1,0 +1,18 @@
+## Python Requirements for ZPO TensorFlow Integration
+## Install with: pip install -r requirements.txt
+
+# Core machine learning
+tensorflow>=2.12.0
+numpy>=1.21.0
+
+# Optional dependencies
+scikit-learn>=1.0.0
+pandas>=1.3.0
+
+# For PyTorch support (optional)
+# torch>=1.11.0
+# torchvision>=0.12.0
+
+# Model management
+# tensorboard>=2.9.0
+# mlflow>=1.26.0 

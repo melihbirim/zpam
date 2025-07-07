@@ -1,224 +1,205 @@
-# ZPO Spam Filter Configuration
-# This file allows customization without code changes
-
 detection:
-  spam_threshold: 5  # Emails scoring 4-5 are moved to spam
-  
-  # SpamAssassin-inspired thresholds (more granular control)
-  spamassassin_mode: true        # Enable SpamAssassin-compatible scoring
-  spamassassin_thresholds:
-    clean: 0.0                   # Score 0-5.0 = definitely clean (1/5)
-    low_risk: 5.0                # Score 5.0-15.0 = low spam risk (2/5)
-    medium_risk: 15.0            # Score 15.0-25.0 = medium spam risk (3/5)  
-    high_risk: 25.0              # Score 25.0-35.0 = high spam risk (4/5)
-    spam_threshold: 35.0         # Score 35.0+ = definite spam (5/5)
-  
-  weights:
-    subject_keywords: 1.5
-    body_keywords: 1.2
-    caps_ratio: 1.2
-    exclamation_ratio: 0.8
-    url_density: 0.8
-    html_ratio: 0.3
-    suspicious_headers: 0.5
-    attachment_risk: 0.5
-    domain_reputation: 0.1
-    encoding_issues: 1.0
-    from_to_mismatch: 2.0
-    subject_length: 0.5
-    frequency_penalty: 0.5
-    word_frequency: 0.5
-    header_validation: 0.1
-  
-  keywords:
-    high_risk:
-      - "free money"
-      - "get rich quick"
-      - "make money fast"
-      - "guaranteed income"
-      - "no risk"
-      - "act now"
-      - "limited time"
-      - "urgent"
-      - "congratulations"
-      - "you have won"
-      - "lottery"
-      - "inheritance"
-      - "nigerian prince"
-      - "viagra"
-      - "cialis"
-      - "pharmacy"
-      - "prescription"
-    
-    medium_risk:
-      - "click here"
-      - "visit our website"
-      - "special offer"
-      - "discount"
-      - "save money"
-      - "credit"
-      - "loan"
-      - "mortgage"
-      - "insurance"
-      - "weight loss"
-      - "diet"
-      - "lose weight"
-      - "earn extra"
-    
-    low_risk:
-      - "free"
-      - "offer"
-      - "deal"
-      - "sale"
-      - "promotion"
-      - "bonus"
-      - "gift"
-      - "prize"
-      - "winner"
-      - "selected"
-      - "opportunity"
-  
-  features:
-    keyword_detection: true
-    header_analysis: true
-    attachment_scan: true
-    domain_check: true
-    frequency_tracking: true
-    learning_mode: false
-
+    spam_threshold: 5
+    weights:
+        subject_keywords: 1.5
+        body_keywords: 1.2
+        caps_ratio: 1.2
+        exclamation_ratio: 0.8
+        url_density: 0.8
+        html_ratio: 0.3
+        suspicious_headers: 0.5
+        attachment_risk: 0.5
+        domain_reputation: 0.1
+        encoding_issues: 1
+        from_to_mismatch: 2
+        subject_length: 0.5
+        frequency_penalty: 0.5
+        word_frequency: 0.5
+        header_validation: 0.1
+    keywords:
+        high_risk:
+            - free money
+            - get rich quick
+            - make money fast
+            - guaranteed income
+            - no risk
+            - act now
+            - limited time
+            - urgent
+            - congratulations
+            - you have won
+            - lottery
+            - inheritance
+            - nigerian prince
+            - viagra
+            - cialis
+            - pharmacy
+            - prescription
+        medium_risk:
+            - click here
+            - visit our website
+            - special offer
+            - discount
+            - save money
+            - credit
+            - loan
+            - mortgage
+            - insurance
+            - weight loss
+            - diet
+            - lose weight
+            - earn extra
+        low_risk:
+            - free
+            - offer
+            - deal
+            - sale
+            - promotion
+            - bonus
+            - gift
+            - prize
+            - winner
+            - selected
+            - opportunity
+    features:
+        keyword_detection: true
+        header_analysis: true
+        attachment_scan: true
+        domain_check: true
+        frequency_tracking: true
+        learning_mode: false
 lists:
-  # Whitelist - these emails/domains are always trusted
-  whitelist_emails: []
-  whitelist_domains: []
-  
-  # Blacklist - these emails/domains are always spam
-  blacklist_emails: []
-  blacklist_domains: []
-  
-  # Trusted domains - reputable email providers
-  trusted_domains:
-    - "gmail.com"
-    - "yahoo.com"
-    - "outlook.com"
-    - "hotmail.com"
-    - "apple.com"
-    - "microsoft.com"
-    - "google.com"
-    - "amazon.com"
-
+    whitelist_emails: []
+    blacklist_emails: []
+    whitelist_domains: []
+    blacklist_domains: []
+    trusted_domains:
+        - gmail.com
+        - yahoo.com
+        - outlook.com
+        - hotmail.com
+        - apple.com
+        - microsoft.com
+        - google.com
+        - amazon.com
 performance:
-  max_concurrent_emails: 20    # Parallel email processing (20 workers for batch processing)
-  timeout_ms: 500               # Faster timeout for parallel execution  
-  cache_size: 5000              # Larger cache for parallel workload
-  batch_size: 100
-  
-  # Parallel execution settings
-  enable_parallel_features: true   # Enable parallel feature scoring within each email
-  parallel_dns_workers: 10         # DNS async operations (configured in headers section)
-
+    max_concurrent_emails: 20
+    timeout_ms: 500
+    cache_size: 5000
+    batch_size: 100
 logging:
-  level: "debug"  # debug, info, warn, error
-  file: ""       # empty = stdout
-  format: "text" # text or json
-  max_size_mb: 10
-  max_backups: 3 
-
-# Word frequency learning settings
+    level: debug
+    file: ""
+    format: text
+    max_size_mb: 10
+    max_backups: 3
 learning:
-  enabled: true               # Enable Bayesian word learning
-  model_path: "zpo-model.json" # Path to save/load learned model
-  min_word_length: 3          # Minimum word length for learning
-  max_word_length: 20         # Maximum word length for learning
-  case_sensitive: false       # Whether to preserve case
-  spam_threshold: 0.7         # Spam probability threshold
-  min_word_count: 2           # Minimum occurrences to consider a word
-  smoothing_factor: 1.0       # Laplace smoothing factor
-  use_subject_words: true     # Learn from email subjects
-  use_body_words: true        # Learn from email bodies
-  use_header_words: false     # Learn from email headers
-  max_vocabulary_size: 10000  # Maximum vocabulary size
-  auto_train: false           # Automatically train on classified emails
-
-# Email headers validation settings
+    enabled: true
+    model_path: zpo-model.json
+    min_word_length: 3
+    max_word_length: 20
+    case_sensitive: false
+    spam_threshold: 0.7
+    min_word_count: 2
+    smoothing_factor: 1
+    use_subject_words: true
+    use_body_words: true
+    use_header_words: false
+    max_vocabulary_size: 10000
+    auto_train: false
 headers:
-  # Environment-aware header validation (inspired by SpamAssassin)
-  environment: "development"     # development, staging, production
-  enable_spf: true               # Enable SPF validation (testing new penalties)
-  enable_dkim: true              # Enable DKIM validation (testing new penalties)  
-  enable_dmarc: true             # Enable DMARC validation (testing new penalties)
-  dns_timeout_ms: 5000           # DNS lookup timeout in milliseconds
-  max_hop_count: 15              # Maximum routing hops before suspicious
-  suspicious_server_score: 75    # Threshold for suspicious server detection
-  
-  # SpamAssassin-inspired penalty weights (final tuning)
-  spf_fail_penalty: 0.9          # SpamAssassin uses 0.9, we were using 8.0!
-  dkim_missing_penalty: 1.0      # SpamAssassin-like penalty
-  dmarc_missing_penalty: 1.5     # Moderate penalty for missing DMARC
-  auth_weight: 0.2               # Much lighter weight (40.40 → ~8 points)
-  suspicious_weight: 0.2         # Much lighter weight for local testing
-  
-  # Production vs Development settings
-  production_mode:
     enable_spf: true
     enable_dkim: true
     enable_dmarc: true
-    spf_fail_penalty: 2.0        # Stricter in production
-    dkim_missing_penalty: 2.0
-    dmarc_missing_penalty: 3.0
-    auth_weight: 1.5
-    suspicious_weight: 1.5
-  
-  cache_size: 1000               # Cache size for DNS lookups
-  
-  # Async DNS Configuration
-  enable_async_dns: false     # Enable non-blocking DNS operations
-  async_dns_workers: 10       # Number of async DNS worker goroutines
-  use_internal_dns: false     # Use internal DNS test server (for testing)
-  
-  # Performance monitoring
-  enable_cache_stats: true    # Enable cache performance statistics
-  log_cache_performance: false # Log cache performance metrics
-  dns_performance_threshold_ms: 1000 # Alert if DNS takes longer than this
-
-# Milter server settings for Postfix/Sendmail integration
+    dns_timeout_ms: 5000
+    max_hop_count: 15
+    suspicious_server_score: 75
+    auth_weight: 0.2
+    suspicious_weight: 0.2
+    spf_fail_penalty: 0.9
+    dkim_missing_penalty: 1
+    dmarc_missing_penalty: 1.5
+    cache_size: 1000
+    cache_ttl_min: 60
 milter:
-  enabled: true                    # Enable milter server (set to true to activate)
-  network: "tcp"                    # Network type: "tcp" or "unix"
-  address: "127.0.0.1:7357"         # TCP address or unix socket path
-  
-  # Connection settings
-  read_timeout_ms: 10000            # Read timeout in milliseconds
-  write_timeout_ms: 10000           # Write timeout in milliseconds
-  
-  # Protocol options - what SMTP events to receive/skip
-  skip_connect: false               # Skip connection events (recommended: false)
-  skip_helo: true                   # Skip HELO/EHLO events (recommended: true for performance)
-  skip_mail: false                  # Skip MAIL FROM events (recommended: false)
-  skip_rcpt: false                  # Skip RCPT TO events (recommended: false)
-  skip_headers: false               # Skip header events (recommended: false)
-  skip_body: false                  # Skip body events (set true if only analyzing headers)
-  skip_eoh: true                    # Skip end-of-headers events (recommended: true)
-  skip_data: true                   # Skip DATA command events (recommended: true)
-  
-  # Message modification capabilities
-  can_add_headers: true             # Allow adding email headers
-  can_change_headers: true          # Allow modifying email headers
-  can_add_recipients: true          # Allow adding recipients
-  can_remove_recipients: false      # Allow removing recipients (careful!)
-  can_change_body: true             # Allow modifying email body
-  can_quarantine: false             # Allow quarantining emails
-  can_change_from: true             # Allow changing FROM address
-  
-  # Performance settings
-  max_concurrent_connections: 10    # Maximum concurrent milter connections
-  graceful_shutdown_timeout_ms: 10000 # Graceful shutdown timeout
-  
-  # Response thresholds (based on ZPO's 1-5 scoring system)
-  reject_threshold: 5               # ZPO Score 5/5 gets rejected
-  quarantine_threshold: 4           # ZPO Score >= 4/5 gets quarantined (if quarantine enabled)
-  reject_message: ""                # Custom rejection message (empty = default)
-  quarantine_message: ""            # Custom quarantine message (empty = default)
-  
-  # Header modifications
-  add_spam_headers: true            # Add X-ZPO-* headers with scan results
-  spam_header_prefix: "X-ZPO-"      # Prefix for spam detection headers
+    enabled: true
+    network: tcp
+    address: 127.0.0.1:7357
+    read_timeout_ms: 10000
+    write_timeout_ms: 10000
+    skip_connect: false
+    skip_helo: true
+    skip_mail: false
+    skip_rcpt: false
+    skip_headers: false
+    skip_body: false
+    skip_eoh: true
+    skip_data: true
+    can_add_headers: true
+    can_change_headers: true
+    can_add_recipients: true
+    can_remove_recipients: false
+    can_change_body: true
+    can_quarantine: false
+    can_change_from: true
+    max_concurrent_connections: 10
+    graceful_shutdown_timeout_ms: 10000
+    reject_threshold: 5
+    quarantine_threshold: 4
+    reject_message: ""
+    quarantine_message: ""
+    add_spam_headers: true
+    spam_header_prefix: X-ZPO-
+plugins:
+    enabled: true
+    timeout_ms: 5000
+    max_concurrent: 3
+    score_method: weighted
+    spamassassin:
+        enabled: false
+        weight: 2
+        priority: 1
+        timeout_ms: 5000
+        settings:
+            executable: spamc
+            host: localhost
+            max_size: 10485760
+            port: 783
+    rspamd:
+        enabled: false
+        weight: 2
+        priority: 2
+        timeout_ms: 3000
+        settings:
+            password: ""
+            url: http://localhost:11334
+    custom_rules:
+        enabled: true
+        weight: 1.5
+        priority: 3
+        timeout_ms: 1000
+        settings:
+            rules_file: custom_rules.yml
+    virustotal:
+        enabled: false
+        weight: 3
+        priority: 4
+        timeout_ms: 10000
+        settings:
+            api_key: ""
+            timeout: 10000
+    machine_learning:
+        enabled: true
+        weight: 2.5
+        priority: 5
+        timeout_ms: 5000
+        settings:
+            type: simple  # Options: simple, tensorflow, pytorch, sklearn, external
+            model_path: "models/spam_classifier"
+            confidence_threshold: 0.7
+            # TensorFlow-specific settings
+            serving_url: http://localhost:8501  # TensorFlow Serving URL
+            model_name: spam_classifier
+            model_version: "1"
+            use_python: true  # Use Python script fallback
+            python_script: scripts/tf_inference.py
