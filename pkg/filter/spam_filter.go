@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/zpo/spam-filter/pkg/email"
 	"github.com/zpo/spam-filter/pkg/headers"
 	"github.com/zpo/spam-filter/pkg/learning"
+	"github.com/zpo/spam-filter/pkg/plugins"
 	"github.com/zpo/spam-filter/pkg/tracker"
 )
 
@@ -26,11 +28,12 @@ type FilterResults struct {
 
 // SpamFilter implements the ZPO spam detection algorithm
 type SpamFilter struct {
-	parser    *email.Parser
-	config    *config.Config
-	tracker   *tracker.FrequencyTracker
-	learner   *learning.WordFrequency
-	validator *headers.Validator
+	parser        *email.Parser
+	config        *config.Config
+	tracker       *tracker.FrequencyTracker
+	learner       *learning.WordFrequency
+	validator     *headers.Validator
+	pluginManager *plugins.DefaultPluginManager
 
 	// Legacy fields for backward compatibility
 	keywords SpamKeywords
@@ -81,11 +84,12 @@ func NewSpamFilter() *SpamFilter {
 // NewSpamFilterWithConfig creates a new spam filter with custom configuration
 func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 	sf := &SpamFilter{
-		parser:   email.NewParser(),
-		config:   cfg,
-		tracker:  tracker.NewFrequencyTracker(60, cfg.Performance.CacheSize), // 60 minute window
-		keywords: convertConfigKeywords(cfg.Detection.Keywords),
-		weights:  convertConfigWeights(cfg.Detection.Weights),
+		parser:        email.NewParser(),
+		config:        cfg,
+		tracker:       tracker.NewFrequencyTracker(60, cfg.Performance.CacheSize), // 60 minute window
+		keywords:      convertConfigKeywords(cfg.Detection.Keywords),
+		weights:       convertConfigWeights(cfg.Detection.Weights),
+		pluginManager: plugins.NewPluginManager(),
 	}
 
 	// Initialize headers validator
@@ -139,6 +143,9 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 		}
 	}
 
+	// Initialize plugins
+	sf.initializePlugins()
+
 	return sf
 }
 
@@ -149,6 +156,44 @@ func LoadConfigFromPath(configPath string) (*config.Config, error) {
 	}
 
 	return config.LoadConfig(configPath)
+}
+
+// initializePlugins sets up and configures the plugin system
+func (sf *SpamFilter) initializePlugins() {
+	if sf.pluginManager == nil {
+		return
+	}
+
+	// Register built-in plugins
+	sf.pluginManager.RegisterPlugin(plugins.NewSpamAssassinPlugin())
+	sf.pluginManager.RegisterPlugin(plugins.NewRspamdPlugin())
+	sf.pluginManager.RegisterPlugin(plugins.NewCustomRulesPlugin())
+	sf.pluginManager.RegisterPlugin(plugins.NewVirusTotalPlugin())
+	sf.pluginManager.RegisterPlugin(plugins.NewMLPlugin())
+
+	// Load plugin configurations if available
+	if sf.config != nil && sf.config.Plugins.Enabled {
+		pluginConfigs := map[string]*plugins.PluginConfig{
+			"spamassassin": convertConfigToPluginConfig(sf.config.Plugins.SpamAssassin),
+			"rspamd":       convertConfigToPluginConfig(sf.config.Plugins.Rspamd),
+			"custom_rules": convertConfigToPluginConfig(sf.config.Plugins.CustomRules),
+		}
+
+		if err := sf.pluginManager.LoadPlugins(pluginConfigs); err != nil {
+			fmt.Printf("Warning: Failed to load plugins: %v\n", err)
+		}
+	}
+}
+
+// convertConfigToPluginConfig converts config.PluginConfig to plugins.PluginConfig
+func convertConfigToPluginConfig(cfg config.PluginConfig) *plugins.PluginConfig {
+	return &plugins.PluginConfig{
+		Enabled:  cfg.Enabled,
+		Weight:   cfg.Weight,
+		Priority: cfg.Priority,
+		Timeout:  time.Duration(cfg.Timeout) * time.Millisecond,
+		Settings: cfg.Settings,
+	}
 }
 
 // TestEmail tests a single email and returns spam score (1-5)
@@ -511,13 +556,47 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 		debugScores = append(debugScores, fmt.Sprintf("%s:%.2f", featureScore.Name, featureScore.Score))
 	}
 
-	// Log debug info if debugging enabled
-	if sf.config != nil && sf.config.Logging.Level == "debug" {
-		fmt.Printf("[DEBUG SPAM SCORE] From:%s Total:%.2f [%s]\n",
-			email.From, totalScore, strings.Join(debugScores, " "))
+	// Run plugins if enabled (parallel with ZPO's native scoring)
+	var pluginScore float64
+	if sf.pluginManager != nil && sf.config != nil && sf.config.Plugins.Enabled {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(sf.config.Plugins.Timeout)*time.Millisecond)
+		defer cancel()
+
+		pluginResults, err := sf.pluginManager.ExecuteAll(ctx, email)
+		if err != nil {
+			if sf.config.Logging.Level == "debug" {
+				fmt.Printf("[DEBUG PLUGIN ERROR] %v\n", err)
+			}
+		} else {
+			// Use the plugin manager's built-in score combination
+			pluginScore, err = sf.pluginManager.CombineScores(pluginResults)
+			if err != nil {
+				if sf.config.Logging.Level == "debug" {
+					fmt.Printf("[DEBUG PLUGIN COMBINE ERROR] %v\n", err)
+				}
+				pluginScore = 0 // Fallback to 0 if combination fails
+			}
+
+			if sf.config.Logging.Level == "debug" {
+				var pluginDebug []string
+				for _, result := range pluginResults {
+					pluginDebug = append(pluginDebug, fmt.Sprintf("%s:%.2f", result.Name, result.Score))
+				}
+				fmt.Printf("[DEBUG PLUGIN SCORES] Combined:%.2f [%s]\n", pluginScore, strings.Join(pluginDebug, " "))
+			}
+		}
 	}
 
-	return totalScore
+	// Combine ZPO native score with plugin score
+	finalScore := totalScore + pluginScore
+
+	// Log debug info if debugging enabled
+	if sf.config != nil && sf.config.Logging.Level == "debug" {
+		fmt.Printf("[DEBUG FINAL SCORE] From:%s ZPO:%.2f Plugin:%.2f Final:%.2f [%s]\n",
+			email.From, totalScore, pluginScore, finalScore, strings.Join(debugScores, " "))
+	}
+
+	return finalScore
 }
 
 // scoreKeywords scores based on spam keywords

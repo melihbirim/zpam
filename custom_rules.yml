@@ -1,0 +1,60 @@
+# ZPO Custom Rules Configuration
+# This file defines custom spam detection rules
+# Edit this file to add your own rules
+
+settings:
+  enabled: true
+  case_sensitive: false
+  log_matches: true
+  max_rules_per_email: 50
+
+rules:
+  - id: congratulations_spam
+    name: Congratulations Spam
+    description: Detect congratulations-based scams
+    enabled: true
+    score: 8.0
+    conditions:
+      - type: subject
+        operator: contains
+        value: congratulations
+        case_sensitive: false
+    actions:
+      - type: tag
+        value: congratulations_scam
+      - type: log
+        value: Congratulations scam detected
+
+  - id: urgent_action
+    name: Urgent Action
+    description: Detect urgent action pressure tactics
+    enabled: true
+    score: 5.0
+    conditions:
+      - type: subject
+        operator: regex
+        value: (urgent|act now|limited time)
+        case_sensitive: false
+    actions:
+      - type: tag
+        value: urgent_pressure
+      - type: log
+        value: Urgent pressure tactic detected
+
+rule_sets:
+  financial_strict:
+    enabled: false
+    rules:
+      - congratulations_spam
+      - urgent_action
+
+advanced:
+  combine_scores: true
+  max_total_score: 50.0
+  rule_timeout_ms: 100
+  parallel_execution: true
+  whitelisted_domains: []
+  learning:
+    enabled: false
+    auto_adjust_scores: false
+    feedback_threshold: 10
