@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	lua "github.com/yuin/gopher-lua"
 	"github.com/zpam/spam-filter/pkg/config"
 	"github.com/zpam/spam-filter/pkg/email"
 	"github.com/zpam/spam-filter/pkg/filter"
@@ -244,7 +245,7 @@ Examples:
 }
 
 var pluginsCreateCmd = &cobra.Command{
-	Use:   "create <plugin-name> <type>",
+	Use:   "create <plugin-name> <type> [language]",
 	Short: "Create a new plugin from template",
 	Long: `Generate a new ZPAM plugin from predefined templates.
 
@@ -263,11 +264,15 @@ Available plugin types:
   external-engine      - Integration with external services
   custom-rule-engine   - Custom rule evaluation
 
+Available languages:
+  go                   - Go language (default)
+  lua                  - Lua scripting language
+
 Examples:
   zpam plugins create my-ai-filter ml-classifier
-  zpam plugins create phishing-detector content-analyzer
-  zpam plugins create virus-scanner attachment-scanner`,
-	Args: cobra.ExactArgs(2),
+  zpam plugins create phishing-detector content-analyzer lua
+  zpam plugins create virus-scanner attachment-scanner go`,
+	Args: cobra.RangeArgs(2, 3),
 	Run:  runPluginsCreate,
 }
 
@@ -1621,8 +1626,14 @@ func runPluginsCreate(cmd *cobra.Command, args []string) {
 	pluginName := args[0]
 	pluginType := args[1]
 
-	fmt.Printf("🚀 Creating new ZPAM plugin: %s (%s)\n", pluginName, pluginType)
-	fmt.Println("====================================")
+	// Default to Go if no language specified
+	language := "go"
+	if len(args) >= 3 {
+		language = args[2]
+	}
+
+	fmt.Printf("🚀 Creating new ZPAM plugin: %s (%s, %s)\n", pluginName, pluginType, language)
+	fmt.Println("============================================")
 	fmt.Println()
 
 	// Validate plugin type
@@ -1644,6 +1655,25 @@ func runPluginsCreate(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// Validate language
+	validLanguages := []string{"go", "lua"}
+	isValidLanguage := false
+	for _, validLang := range validLanguages {
+		if language == validLang {
+			isValidLanguage = true
+			break
+		}
+	}
+
+	if !isValidLanguage {
+		fmt.Printf("❌ Invalid language: %s\n", language)
+		fmt.Println("Valid languages:")
+		for _, lang := range validLanguages {
+			fmt.Printf("  - %s\n", lang)
+		}
+		return
+	}
+
 	// Create plugin directory
 	pluginDir := fmt.Sprintf("zpam-plugin-%s", pluginName)
 	if err := os.MkdirAll(pluginDir, 0755); err != nil {
@@ -1655,21 +1685,21 @@ func runPluginsCreate(cmd *cobra.Command, args []string) {
 
 	// Generate plugin manifest
 	fmt.Println("📝 Generating zpam-plugin.yaml manifest...")
-	if err := generatePluginManifest(pluginDir, pluginName, pluginType); err != nil {
+	if err := generatePluginManifest(pluginDir, pluginName, pluginType, language); err != nil {
 		fmt.Printf("❌ Failed to generate manifest: %v\n", err)
 		return
 	}
 
 	// Generate source code template
 	fmt.Println("💻 Generating source code template...")
-	if err := generateSourceTemplate(pluginDir, pluginName, pluginType); err != nil {
+	if err := generateSourceTemplate(pluginDir, pluginName, pluginType, language); err != nil {
 		fmt.Printf("❌ Failed to generate source code: %v\n", err)
 		return
 	}
 
 	// Generate additional files
 	fmt.Println("📚 Generating documentation and build scripts...")
-	if err := generateProjectFiles(pluginDir, pluginName, pluginType); err != nil {
+	if err := generateProjectFiles(pluginDir, pluginName, pluginType, language); err != nil {
 		fmt.Printf("❌ Failed to generate project files: %v\n", err)
 		return
 	}
@@ -1872,27 +1902,32 @@ type ValidationResult struct {
 	Messages []string
 }
 
-func generatePluginManifest(pluginDir, pluginName, pluginType string) error {
-	// Generate zpam-plugin.yaml content based on plugin type
-	manifestContent := generateManifestContent(pluginName, pluginType)
+func generatePluginManifest(pluginDir, pluginName, pluginType, language string) error {
+	// Generate zpam-plugin.yaml content based on plugin type and language
+	manifestContent := generateManifestContent(pluginName, pluginType, language)
 	manifestPath := filepath.Join(pluginDir, "zpam-plugin.yaml")
 	return os.WriteFile(manifestPath, []byte(manifestContent), 0644)
 }
 
-func generateSourceTemplate(pluginDir, pluginName, pluginType string) error {
+func generateSourceTemplate(pluginDir, pluginName, pluginType, language string) error {
 	// Create src directory
 	srcDir := filepath.Join(pluginDir, "src")
 	if err := os.MkdirAll(srcDir, 0755); err != nil {
 		return err
 	}
 
-	// Generate main.go template based on plugin type
-	sourceContent := generateSourceContent(pluginName, pluginType)
-	sourcePath := filepath.Join(srcDir, "main.go")
+	// Generate source template based on plugin type and language
+	sourceContent := generateSourceContent(pluginName, pluginType, language)
+	var sourcePath string
+	if language == "lua" {
+		sourcePath = filepath.Join(srcDir, "main.lua")
+	} else {
+		sourcePath = filepath.Join(srcDir, "main.go")
+	}
 	return os.WriteFile(sourcePath, []byte(sourceContent), 0644)
 }
 
-func generateProjectFiles(pluginDir, pluginName, pluginType string) error {
+func generateProjectFiles(pluginDir, pluginName, pluginType, language string) error {
 	// Generate README.md
 	readmeContent := generateReadmeContent(pluginName, pluginType)
 	readmePath := filepath.Join(pluginDir, "README.md")
@@ -1916,25 +1951,34 @@ func generateProjectFiles(pluginDir, pluginName, pluginType string) error {
 	return nil
 }
 
-func generateManifestContent(pluginName, pluginType string) string {
+func generateManifestContent(pluginName, pluginType, language string) string {
 	interfaces := getInterfacesForType(pluginType)
+
+	var mainField string
+	if language == "lua" {
+		mainField = fmt.Sprintf(`main:
+  script: "./src/main.lua"
+  runtime: "lua"`)
+	} else {
+		mainField = fmt.Sprintf(`main:
+  binary: "./bin/%s"`, pluginName)
+	}
 
 	return fmt.Sprintf(`manifest_version: "1.0"
 
 plugin:
   name: "%s"
   version: "1.0.0"
-  description: "ZPAM plugin for %s"
+  description: "ZPAM plugin for %s (%s)"
   author: "%s"
   homepage: "https://github.com/yourusername/%s"
   repository: "https://github.com/yourusername/%s"
   license: "MIT"
   type: "%s"
-  tags: ["%s"]
+  tags: ["%s", "%s"]
   min_zpam_version: "2.0.0"
 
-main:
-  binary: "./bin/%s"
+%s
 
 interfaces:
 %s
@@ -1952,11 +1996,19 @@ security:
 
 marketplace:
   category: "Spam Detection"
-  keywords: ["%s", "spam", "detection"]
-`, pluginName, pluginType, getAuthorName(), pluginName, pluginName, pluginType, pluginType, pluginName, interfaces, pluginType)
+  keywords: ["%s", "spam", "detection", "%s"]
+`, pluginName, pluginType, language, getAuthorName(), pluginName, pluginName, pluginType, pluginType, language, mainField, interfaces, pluginType, language)
 }
 
-func generateSourceContent(pluginName, pluginType string) string {
+func generateSourceContent(pluginName, pluginType, language string) string {
+	if language == "lua" {
+		return generateLuaSourceContent(pluginName, pluginType)
+	} else {
+		return generateGoSourceContent(pluginName, pluginType)
+	}
+}
+
+func generateGoSourceContent(pluginName, pluginType string) string {
 	return fmt.Sprintf(`package main
 
 import (
@@ -2006,6 +2058,249 @@ func outputResult(result PluginResult) {
 		result.Score, result.Confidence, result.Explanation)
 }
 `, pluginName, pluginType, pluginName, pluginType, pluginName)
+}
+
+func generateLuaSourceContent(pluginName, pluginType string) string {
+	functionName := getFunctionNameForType(pluginType)
+
+	return fmt.Sprintf(`-- @name %s
+-- @version 1.0.0
+-- @description ZPAM plugin for %s
+-- @type %s
+-- @interfaces %s
+
+-- ZPAM %s Plugin
+-- TODO: Implement your spam detection logic here
+
+-- Main function that ZPAM will call
+-- @param email table - Email data with fields: from, to, subject, body, headers, attachments
+-- @return table - Result with score, confidence, rules, metadata
+function %s(email)
+    -- TODO: Implement your %s logic here
+    
+    local result = {
+        score = 0.0,       -- 0.0 to 100.0 (higher = more spam)
+        confidence = 0.7,  -- 0.0 to 1.0 (confidence in the score)
+        rules = {},        -- Array of triggered rule descriptions
+        metadata = {}      -- Key-value pairs of additional information
+    }
+    
+    -- Example analysis based on plugin type
+    %s
+    
+    -- Add metadata
+    result.metadata.plugin_name = "%s"
+    result.metadata.version = "1.0.0"
+    result.metadata.analysis_type = "%s"
+    
+    return result
+end
+
+-- Helper functions for common tasks
+function contains_keyword(text, keywords)
+    if not text or not keywords then
+        return false
+    end
+    
+    local lower_text = string.lower(text)
+    for _, keyword in ipairs(keywords) do
+        if string.find(lower_text, string.lower(keyword), 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+function count_caps(text)
+    if not text then return 0 end
+    local caps = 0
+    for i = 1, #text do
+        local char = string.sub(text, i, i)
+        if char:match("%%u") then
+            caps = caps + 1
+        end
+    end
+    return caps / #text
+end
+
+function extract_domain(email_addr)
+    if not email_addr then return "" end
+    local at_pos = string.find(email_addr, "@")
+    if at_pos then
+        return string.sub(email_addr, at_pos + 1)
+    end
+    return email_addr
+end
+
+-- ZPAM API functions available:
+-- zpam.log(message)              - Log a message
+-- zpam.contains(text, pattern)   - Case-insensitive substring search
+-- zpam.domain_from_email(email)  - Extract domain from email address
+`, pluginName, pluginType, pluginType, getInterfacesForType(pluginType), pluginType, functionName, pluginType, generateLuaExample(pluginType), pluginName, pluginType)
+}
+
+func getFunctionNameForType(pluginType string) string {
+	switch pluginType {
+	case "content-analyzer":
+		return "analyze_content"
+	case "reputation-checker":
+		return "check_reputation"
+	case "attachment-scanner":
+		return "scan_attachments"
+	case "ml-classifier":
+		return "classify"
+	case "external-engine":
+		return "analyze"
+	case "custom-rule-engine":
+		return "evaluate_rules"
+	default:
+		return "analyze_content"
+	}
+}
+
+func generateLuaExample(pluginType string) string {
+	switch pluginType {
+	case "content-analyzer":
+		return `    -- Example: Check for spam keywords in subject and body
+    local spam_keywords = {"viagra", "lottery", "winner", "congratulations", "urgent"}
+    
+    if contains_keyword(email.subject, spam_keywords) then
+        result.score = 80.0
+        result.confidence = 0.9
+        table.insert(result.rules, "Spam keyword in subject")
+    end
+    
+    if contains_keyword(email.body, spam_keywords) then
+        result.score = result.score + 50.0
+        result.confidence = 0.8
+        table.insert(result.rules, "Spam keyword in body")
+    end
+    
+    -- Check for excessive capitalization
+    if count_caps(email.subject) > 0.5 then
+        result.score = result.score + 20.0
+        table.insert(result.rules, "Excessive caps in subject")
+    end`
+	case "reputation-checker":
+		return `    -- Example: Check sender domain reputation
+    local domain = extract_domain(email.from)
+    local suspicious_domains = {"tempmail.com", "guerrillamail.com", "10minutemail.com"}
+    
+    for _, bad_domain in ipairs(suspicious_domains) do
+        if domain == bad_domain then
+            result.score = 90.0
+            result.confidence = 0.95
+            table.insert(result.rules, "Known spam domain: " .. domain)
+            break
+        end
+    end
+    
+    -- Check for suspicious TLDs
+    if string.match(domain, "%.tk$") or string.match(domain, "%.ml$") then
+        result.score = result.score + 30.0
+        table.insert(result.rules, "Suspicious TLD")
+    end`
+	case "attachment-scanner":
+		return `    -- Example: Check for dangerous attachments
+    if email.attachments then
+        for _, attachment in ipairs(email.attachments) do
+            local filename = attachment.filename or ""
+            local content_type = attachment.content_type or ""
+            
+            -- Check for executable files
+            if string.match(filename, "%.exe$") or string.match(filename, "%.scr$") then
+                result.score = 95.0
+                result.confidence = 0.9
+                table.insert(result.rules, "Executable attachment: " .. filename)
+            end
+            
+            -- Check for suspicious file types
+            if string.match(content_type, "application/x%-msdownload") then
+                result.score = result.score + 70.0
+                table.insert(result.rules, "Suspicious attachment type")
+            end
+        end
+    end`
+	case "ml-classifier":
+		return `    -- Example: Simple ML-like classification
+    local spam_score = 0
+    local features = {}
+    
+    -- Feature extraction
+    features.subject_length = #(email.subject or "")
+    features.body_length = #(email.body or "")
+    features.has_attachments = (email.attachments and #email.attachments > 0)
+    
+    -- Simple scoring model
+    if features.subject_length < 10 or features.subject_length > 100 then
+        spam_score = spam_score + 20
+    end
+    
+    if features.body_length < 50 then
+        spam_score = spam_score + 30
+    end
+    
+    if features.has_attachments then
+        spam_score = spam_score + 10
+    end
+    
+    result.score = spam_score
+    result.confidence = 0.6`
+	case "external-engine":
+		return `    -- Example: Simulate external API call
+    -- Note: Lua plugins cannot make real HTTP requests
+    -- This would need to be implemented via ZPAM API functions
+    
+    local domain = extract_domain(email.from)
+    
+    -- Simulate API response based on domain
+    if domain == "spam.example.com" then
+        result.score = 85.0
+        result.confidence = 0.9
+        table.insert(result.rules, "External API flagged domain")
+    end
+    
+    result.metadata.external_check = "simulated"`
+	case "custom-rule-engine":
+		return `    -- Example: Custom rule evaluation
+    local rules = {
+        {
+            name = "Subject contains money",
+            pattern = "money",
+            score = 40.0,
+            field = "subject"
+        },
+        {
+            name = "Body too short",
+            threshold = 20,
+            score = 25.0,
+            field = "body_length"
+        }
+    }
+    
+    for _, rule in ipairs(rules) do
+        local triggered = false
+        
+        if rule.field == "subject" and rule.pattern then
+            if contains_keyword(email.subject, {rule.pattern}) then
+                triggered = true
+            end
+        elseif rule.field == "body_length" then
+            if #(email.body or "") < rule.threshold then
+                triggered = true
+            end
+        end
+        
+        if triggered then
+            result.score = result.score + rule.score
+            table.insert(result.rules, rule.name)
+        end
+    end`
+	default:
+		return `    -- TODO: Implement your analysis logic here
+    result.score = 0.0
+    result.confidence = 0.5`
+	}
 }
 
 func generateReadmeContent(pluginName, pluginType string) string {
@@ -2138,7 +2433,13 @@ func validateManifestFile(pluginPath string) ValidationResult {
 }
 
 func validateInterfaceCompliance(pluginPath string) ValidationResult {
-	// In production, this would check if the plugin implements required interfaces
+	// Check if this is a Lua plugin
+	luaScriptPath := filepath.Join(pluginPath, "src", "main.lua")
+	if _, err := os.Stat(luaScriptPath); err == nil {
+		return validateLuaInterfaceCompliance(pluginPath, luaScriptPath)
+	}
+
+	// Default Go plugin validation
 	return ValidationResult{
 		Status:   "pass",
 		Messages: []string{"Interface compliance verified"},
@@ -2154,10 +2455,162 @@ func validateSecurity(pluginPath string) ValidationResult {
 }
 
 func validateCodeQuality(pluginPath string) ValidationResult {
-	// In production, this would run linters, tests, etc.
+	// Check if this is a Lua plugin
+	luaScriptPath := filepath.Join(pluginPath, "src", "main.lua")
+	if _, err := os.Stat(luaScriptPath); err == nil {
+		return validateLuaCodeQuality(luaScriptPath)
+	}
+
+	// In production, this would run linters, tests, etc. for Go plugins
 	return ValidationResult{
 		Status:   "warning",
 		Messages: []string{"Code quality acceptable", "Consider adding more tests"},
+	}
+}
+
+func validateLuaInterfaceCompliance(pluginPath, luaScriptPath string) ValidationResult {
+	// Read the Lua script
+	content, err := os.ReadFile(luaScriptPath)
+	if err != nil {
+		return ValidationResult{
+			Status:   "error",
+			Messages: []string{fmt.Sprintf("Failed to read Lua script: %v", err)},
+		}
+	}
+
+	scriptContent := string(content)
+
+	// Check if manifest exists (simplified check)
+	manifestPath := filepath.Join(pluginPath, "zpam-plugin.yaml")
+	if _, err := os.Stat(manifestPath); err != nil {
+		return ValidationResult{
+			Status:   "error",
+			Messages: []string{"Could not find manifest file"},
+		}
+	}
+
+	messages := []string{}
+	status := "pass"
+
+	// Check for required function based on plugin type
+	// This is a simple check - in production you'd use a proper Lua parser
+	requiredFunctions := []string{
+		"analyze_content",
+		"check_reputation",
+		"scan_attachments",
+		"classify",
+		"analyze",
+		"evaluate_rules",
+	}
+
+	foundFunction := false
+	for _, funcName := range requiredFunctions {
+		if strings.Contains(scriptContent, fmt.Sprintf("function %s(", funcName)) {
+			messages = append(messages, fmt.Sprintf("Found required function: %s", funcName))
+			foundFunction = true
+			break
+		}
+	}
+
+	if !foundFunction {
+		status = "error"
+		messages = append(messages, "No required interface function found")
+		messages = append(messages, "Expected one of: analyze_content, check_reputation, scan_attachments, classify, analyze, evaluate_rules")
+	}
+
+	// Check for proper metadata comments
+	if strings.Contains(scriptContent, "@name") &&
+		strings.Contains(scriptContent, "@version") &&
+		strings.Contains(scriptContent, "@description") {
+		messages = append(messages, "Plugin metadata present")
+	} else {
+		if status != "error" {
+			status = "warning"
+		}
+		messages = append(messages, "Missing some plugin metadata comments (@name, @version, @description)")
+	}
+
+	// Check for proper return format
+	if strings.Contains(scriptContent, "score") &&
+		strings.Contains(scriptContent, "confidence") &&
+		strings.Contains(scriptContent, "return result") {
+		messages = append(messages, "Proper result format used")
+	} else {
+		if status != "error" {
+			status = "warning"
+		}
+		messages = append(messages, "Result format may not match expected structure")
+	}
+
+	return ValidationResult{
+		Status:   status,
+		Messages: messages,
+	}
+}
+
+func validateLuaCodeQuality(luaScriptPath string) ValidationResult {
+	// Basic Lua syntax validation using gopher-lua
+	content, err := os.ReadFile(luaScriptPath)
+	if err != nil {
+		return ValidationResult{
+			Status:   "error",
+			Messages: []string{fmt.Sprintf("Failed to read Lua script: %v", err)},
+		}
+	}
+
+	// Try to compile the Lua script to check for syntax errors
+	vm := lua.NewState()
+	defer vm.Close()
+
+	messages := []string{}
+	status := "pass"
+
+	// Test syntax by trying to load the script
+	if err := vm.DoString(string(content)); err != nil {
+		status = "error"
+		messages = append(messages, fmt.Sprintf("Lua syntax error: %v", err))
+	} else {
+		messages = append(messages, "Lua syntax is valid")
+	}
+
+	// Check for good practices
+	scriptContent := string(content)
+
+	// Check for helper functions
+	if strings.Contains(scriptContent, "function ") {
+		helperCount := strings.Count(scriptContent, "function ") - 1 // -1 for main function
+		if helperCount > 0 {
+			messages = append(messages, fmt.Sprintf("Good: %d helper functions defined", helperCount))
+		}
+	}
+
+	// Check for error handling
+	if strings.Contains(scriptContent, "if not") || strings.Contains(scriptContent, "if err") {
+		messages = append(messages, "Good: Error handling present")
+	} else {
+		if status != "error" {
+			status = "warning"
+		}
+		messages = append(messages, "Consider adding error handling")
+	}
+
+	// Check for documentation
+	commentLines := strings.Count(scriptContent, "--")
+	totalLines := strings.Count(scriptContent, "\n") + 1
+	commentRatio := float64(commentLines) / float64(totalLines)
+
+	if commentRatio > 0.2 {
+		messages = append(messages, "Good: Well documented code")
+	} else {
+		if status != "error" {
+			status = "warning"
+		}
+		messages = append(messages, "Consider adding more comments")
+	}
+
+	return ValidationResult{
+		Status:   status,
+		Messages: messages,
 	}
 }
 
