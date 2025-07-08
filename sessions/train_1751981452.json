@@ -1,0 +1,28 @@
+{
+  "id": "train_1751981452",
+  "start_time": "2025-07-08T14:30:52.286631+01:00",
+  "config": {},
+  "progress": {
+    "total_files": 10,
+    "processed_files": 15,
+    "spam_trained": 5,
+    "ham_trained": 5,
+    "error_count": 0,
+    "current_phase": "training"
+  },
+  "statistics": {
+    "start_accuracy": 0,
+    "current_accuracy": 0,
+    "learning_curve": null,
+    "token_analysis": null,
+    "quality_metrics": {
+      "data_balance": 0,
+      "duplicate_ratio": 0,
+      "average_email_length": 0,
+      "vocabulary_size": 0,
+      "common_tokens": null,
+      "suspicious_patterns": null
+    }
+  },
+  "checkpoints": null
+}
