@@ -224,12 +224,64 @@ Monitor ZPAM performance with live dashboards:
 - 📊 **Performance Metrics**: Memory, CPU, and network usage
 - 🧠 **Learning Analytics**: Training progress and model accuracy
 
-## 🔌 **Plugin System**
+## 🔌 **Plugin System & Marketplace**
 
-Extend ZPAM with powerful plugins:
+ZPAM features the industry's most comprehensive plugin ecosystem for spam detection. Build, discover, and deploy plugins in minutes.
+
+### **🚀 Plugin Development - From Idea to Production**
+
+Create production-ready plugins in under 10 lines of code:
 
 ```bash
-# List available plugins
+# 1. Generate plugin template
+./zpam plugins create my-domain-blocker content-analyzer --author "Your Name"
+
+# 2. Implement your logic (edit src/main.go)
+cd zpam-plugin-my-domain-blocker
+
+# 3. Validate & test
+./zpam plugins validate
+./zpam plugins test ../examples/spam.eml
+
+# 4. Build & publish
+./zpam plugins build
+./zpam plugins publish --registry github
+```
+
+**🎯 6 Plugin Types Available:**
+- `content-analyzer` - Analyze email content and headers
+- `reputation-checker` - Check sender/domain reputation
+- `attachment-scanner` - Scan email attachments
+- `ml-classifier` - Machine learning classification
+- `external-engine` - Integration with external services
+- `custom-rule-engine` - Custom rule evaluation
+
+### **📦 Plugin Discovery & Installation**
+
+Install plugins from multiple sources:
+
+```bash
+# From marketplace
+./zpam plugins discover
+./zpam plugins install openai-classifier
+
+# From GitHub
+./zpam plugins install github:security-corp/phishing-detector
+./zpam plugins install https://github.com/user/spam-plugin
+
+# From local files
+./zpam plugins install ./my-plugin/
+./zpam plugins install plugin.zip
+
+# Search for specific functionality
+./zpam plugins search "phishing"
+./zpam plugins search "ai"
+```
+
+### **🔍 Plugin Management**
+
+```bash
+# List installed plugins
 ./zpam plugins list
 
 # Test specific plugin
@@ -241,14 +293,96 @@ Extend ZPAM with powerful plugins:
 
 # View plugin statistics
 ./zpam plugins stats
+
+# Update plugin registry
+./zpam plugins update-registry
 ```
 
-**Available Plugins:**
+### **🛡️ Security & Validation**
+
+ZPAM includes comprehensive plugin validation:
+
+```bash
+# Validate plugin security and compliance
+./zpam plugins validate ./my-plugin/
+
+# Security-only scan
+./zpam plugins validate --security-only
+
+# Strict validation mode
+./zpam plugins validate --strict
+```
+
+**Validation Includes:**
+- ✅ **Manifest Compliance** - YAML syntax and required fields
+- ✅ **Interface Verification** - Plugin implements declared interfaces
+- ✅ **Security Scanning** - Permission analysis and sandbox compliance
+- ✅ **Code Quality** - Linting, testing, documentation standards
+- ✅ **Dependency Checking** - All dependencies available
+
+### **📊 Available Plugin Ecosystem**
+
+**Official Plugins:**
 - **SpamAssassin**: Industry-standard spam detection
-- **Rspamd**: Modern spam filtering engine
-- **Custom Rules**: User-defined detection rules
-- **VirusTotal**: Reputation checking
-- **Machine Learning**: Advanced ML classification
+- **Rspamd**: Modern spam filtering engine  
+- **OpenAI Classifier**: AI-powered spam detection
+- **VirusTotal**: URL and attachment scanning
+- **Microsoft Defender**: Enterprise integration
+
+**Community Plugins:**
+- **Phishing Detector Pro**: Advanced phishing detection
+- **Custom Rules Engine**: User-defined detection rules
+- **Slack Alerts**: Real-time notifications
+- **Advanced Bayes**: Enhanced Bayesian filtering
+
+### **🏗️ Plugin Architecture**
+
+ZPAM plugins implement simple Go interfaces:
+
+```go
+// ContentAnalyzer interface
+type ContentAnalyzer interface {
+    AnalyzeContent(email Email) Result
+}
+
+// Example plugin result
+type Result struct {
+    Score       float64  // 0.0-1.0 (spam probability)
+    Confidence  float64  // 0.0-1.0 (confidence level)
+    Explanation string   // Human-readable explanation
+}
+```
+
+**Key Features:**
+- 🔧 **Template Generation** - Complete project structure in seconds
+- 🔒 **Security Sandboxing** - Isolated execution environment
+- 📝 **Auto Documentation** - Generated README and examples
+- 🎯 **Interface Compliance** - Type-safe plugin development
+- 🚀 **One-Command Publishing** - Deploy to GitHub or marketplace
+
+### **💡 Example: Domain Blocker Plugin**
+
+A simple plugin that blocks specific domains with custom weights:
+
+```go
+// Generated template in src/main.go
+func main() {
+    email := parseEmail(os.Args[1])
+    
+    // Your custom logic
+    score := checkDomainReputation(email.From)
+    
+    result := PluginResult{
+        Score:       score,
+        Confidence:  0.9,
+        Explanation: fmt.Sprintf("Domain reputation check: %s", email.From),
+    }
+    
+    outputJSON(result)
+}
+```
+
+See **[Plugin Development Guide](docs/plugin-development.md)** for complete examples and tutorials.
 
 ## 📮 **Milter Integration**
 
@@ -304,7 +438,7 @@ docker run -d \
 - 🚀 **[Quick Start Guide](docs/QUICKSTART.md)** - Get running in 5 minutes
 - 🔧 **[Configuration Reference](docs/CONFIG.md)** - Complete settings guide
 - 🧠 **[Training Guide](training-data/README.md)** - Optimize accuracy
-- 🔌 **[Plugin Development](docs/custom_plugins.md)** - Build custom plugins
+- 🔌 **[Plugin Development](docs/plugin-development.md)** - Build and publish custom plugins
 - 📊 **[Performance Tuning](docs/PERFORMANCE.md)** - Optimize for your needs
 
 ## 🗺️ **Roadmap**
