@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: zpo-test-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - zpo-test
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: zpo-redis-ui
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - zpo-test
+    profiles:
+      - ui
+
+  # ZPO test instance 1
+  zpo-test-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+    container_name: zpo-test-instance-1
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - ZPO_INSTANCE_ID=instance-1
+      - ZPO_CONFIG_PATH=/app/config-redis.yaml
+      - ZPO_LOG_LEVEL=debug
+    volumes:
+      - test_results:/app/test_results
+      - test_logs:/app/logs
+    networks:
+      - zpo-test
+    profiles:
+      - test
+    command: ["./test_redis_bayes.sh", "unit"]
+
+  # ZPO test instance 2 (for multi-instance testing)
+  zpo-test-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+    container_name: zpo-test-instance-2
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - ZPO_INSTANCE_ID=instance-2
+      - ZPO_CONFIG_PATH=/app/config-redis.yaml
+      - ZPO_LOG_LEVEL=debug
+    volumes:
+      - test_results:/app/test_results
+      - test_logs:/app/logs
+    networks:
+      - zpo-test
+    profiles:
+      - test
+    command: ["./test_redis_bayes.sh", "integration"]
+
+  # Performance testing instance
+  zpo-perf-test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+    container_name: zpo-perf-test
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - ZPO_INSTANCE_ID=perf-test
+      - ZPO_CONFIG_PATH=/app/config-redis.yaml
+      - ZPO_LOG_LEVEL=info
+    volumes:
+      - test_results:/app/test_results
+      - test_logs:/app/logs
+    networks:
+      - zpo-test
+    profiles:
+      - perf
+    command: ["./test_redis_bayes.sh", "performance"]
+
+volumes:
+  redis_data:
+    driver: local
+  test_results:
+    driver: local
+  test_logs:
+    driver: local
+
+networks:
+  zpo-test:
+    driver: bridge 
