@@ -1,19 +1,19 @@
 # Docker Deployment Guide
 
-Complete containerized deployment guide for ZPO spam filter with Redis backend, monitoring, and production-ready configurations.
+Complete containerized deployment guide for ZPAM spam filter with Redis backend, monitoring, and production-ready configurations.
 
 ## 🚀 Quick Start
 
 ```bash
-# Clone and start ZPO with Redis
+# Clone and start ZPAM with Redis
 git clone <repository-url>
-cd zpo
+cd zpam
 
 # Production deployment
 docker-compose -f docker/docker-compose.yml up -d
 
 # Test the deployment
-docker-compose -f docker/docker-compose.yml exec zpo ./zpo filter --input examples/clean_email.eml
+docker-compose -f docker/docker-compose.yml exec zpam ./zpam filter --input examples/clean_email.eml
 ```
 
 ## 📁 Docker Files Overview
@@ -21,19 +21,19 @@ docker-compose -f docker/docker-compose.yml exec zpo ./zpo filter --input exampl
 ### `docker-compose.yml`
 **Purpose:** Production deployment with Redis backend
 **Services:**
-- `zpo`: Main spam filter service
+- `zpam`: Main spam filter service
 - `redis`: Redis server for Bayesian learning
 - `redis-commander`: Optional Redis web UI
 
 ### `docker-compose.test.yml`  
 **Purpose:** Testing environment with isolated containers
 **Services:**
-- `zpo-test`: ZPO with test configuration
+- `zpam-test`: ZPAM with test configuration
 - `redis-test`: Isolated Redis for testing
 - `test-runner`: Automated test execution
 
 ### `Dockerfile`
-**Purpose:** Production ZPO container image
+**Purpose:** Production ZPAM container image
 **Features:**
 - Multi-stage build for minimal size
 - Security-hardened Alpine Linux base
@@ -60,22 +60,22 @@ docker-compose -f docker/docker-compose.yml up -d
 docker-compose -f docker/docker-compose.yml ps
 
 # View logs
-docker-compose -f docker/docker-compose.yml logs -f zpo
+docker-compose -f docker/docker-compose.yml logs -f zpam
 ```
 
 **Services Started:**
-- ZPO spam filter on port 8080
+- ZPAM spam filter on port 8080
 - Redis server on port 6379
 - Redis Commander UI on port 8081 (optional)
 
 ### Multi-Instance Scaling
 
 ```bash
-# Scale ZPO to 3 instances
-docker-compose -f docker/docker-compose.yml up -d --scale zpo=3
+# Scale ZPAM to 3 instances
+docker-compose -f docker/docker-compose.yml up -d --scale zpam=3
 
 # Verify scaling
-docker-compose -f docker/docker-compose.yml ps zpo
+docker-compose -f docker/docker-compose.yml ps zpam
 ```
 
 **Features:**
@@ -95,20 +95,20 @@ nginx:
   volumes:
     - ./nginx.conf:/etc/nginx/nginx.conf
   depends_on:
-    - zpo
+    - zpam
 ```
 
 **Nginx Configuration Example:**
 ```nginx
-upstream zpo_backend {
-    server zpo:8080;
+upstream zpam_backend {
+    server zpam:8080;
     # Add more instances as needed
 }
 
 server {
     listen 80;
     location / {
-        proxy_pass http://zpo_backend;
+        proxy_pass http://zpam_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -127,7 +127,7 @@ docker-compose -f docker/docker-compose.test.yml --profile test up
 docker-compose -f docker/docker-compose.test.yml --profile test run test-runner ./testing/benchmark_simple.sh
 
 # Interactive testing
-docker-compose -f docker/docker-compose.test.yml exec zpo-test bash
+docker-compose -f docker/docker-compose.test.yml exec zpam-test bash
 ```
 
 ### Automated Test Pipeline
@@ -147,21 +147,21 @@ docker-compose -f docker/docker-compose.test.yml run --rm test-runner ./testing/
 
 ### Environment Variables
 
-#### ZPO Configuration
+#### ZPAM Configuration
 ```bash
 # Core settings
-ZPO_CONFIG_FILE=/app/config.yaml
-ZPO_LOG_LEVEL=info
-ZPO_REDIS_URL=redis://redis:6379
+ZPAM_CONFIG_FILE=/app/config.yaml
+ZPAM_LOG_LEVEL=info
+ZPAM_REDIS_URL=redis://redis:6379
 
 # Performance tuning
-ZPO_MAX_WORKERS=4
-ZPO_TIMEOUT_SECONDS=30
-ZPO_BUFFER_SIZE=1000
+ZPAM_MAX_WORKERS=4
+ZPAM_TIMEOUT_SECONDS=30
+ZPAM_BUFFER_SIZE=1000
 
 # Feature flags
-ZPO_ENABLE_METRICS=true
-ZPO_ENABLE_TRACING=false
+ZPAM_ENABLE_METRICS=true
+ZPAM_ENABLE_TRACING=false
 ```
 
 #### Redis Configuration
@@ -179,8 +179,8 @@ REDIS_SAVE_INTERVAL=300
 volumes:
   - ./config.yaml:/app/config.yaml:ro
   - ./custom_rules.yml:/app/custom_rules.yml:ro
-  - zpo_models:/app/models
-  - zpo_logs:/app/logs
+  - zpam_models:/app/models
+  - zpam_logs:/app/logs
 ```
 
 #### Development Mounts
@@ -195,11 +195,11 @@ volumes:
 
 ### Health Checks
 
-ZPO containers include built-in health checks:
+ZPAM containers include built-in health checks:
 
 ```yaml
 healthcheck:
-  test: ["CMD", "./zpo", "health"]
+  test: ["CMD", "./zpam", "health"]
   interval: 30s
   timeout: 10s
   retries: 3
@@ -210,7 +210,7 @@ healthcheck:
 
 ```bash
 # Enable Prometheus metrics
-docker-compose -f docker/docker-compose.yml exec zpo ./zpo metrics --enable
+docker-compose -f docker/docker-compose.yml exec zpam ./zpam metrics --enable
 
 # Access metrics endpoint
 curl http://localhost:8080/metrics
@@ -223,10 +223,10 @@ curl http://localhost:8080/metrics
 docker-compose -f docker/docker-compose.yml logs -f
 
 # Filter logs by service
-docker-compose -f docker/docker-compose.yml logs -f zpo
+docker-compose -f docker/docker-compose.yml logs -f zpam
 
 # Export logs
-docker-compose -f docker/docker-compose.yml logs --no-color > zpo-logs.txt
+docker-compose -f docker/docker-compose.yml logs --no-color > zpam-logs.txt
 ```
 
 ## 🔐 Security
@@ -236,15 +236,15 @@ docker-compose -f docker/docker-compose.yml logs --no-color > zpo-logs.txt
 **Non-root Execution:**
 ```dockerfile
 # User setup in Dockerfile
-RUN addgroup -g 1000 zpo && \
-    adduser -D -s /bin/sh -u 1000 -G zpo zpo
-USER zpo
+RUN addgroup -g 1000 zpam && \
+    adduser -D -s /bin/sh -u 1000 -G zpam zpam
+USER zpam
 ```
 
 **Security Scanning:**
 ```bash
 # Scan for vulnerabilities
-docker scan zpo:latest
+docker scan zpam:latest
 
 # Security audit
 docker-compose -f docker/docker-compose.yml config --services | xargs -I {} docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy {}
@@ -255,7 +255,7 @@ docker-compose -f docker/docker-compose.yml config --services | xargs -I {} dock
 ```yaml
 # Isolated network
 networks:
-  zpo_network:
+  zpam_network:
     driver: bridge
     internal: true
 ```
@@ -280,7 +280,7 @@ services:
 
 ```yaml
 services:
-  zpo:
+  zpam:
     deploy:
       resources:
         limits:
@@ -295,7 +295,7 @@ services:
 
 ```yaml
 services:
-  zpo:
+  zpam:
     restart: unless-stopped
   redis:
     restart: always
@@ -307,7 +307,7 @@ services:
 volumes:
   redis_data:
     driver: local
-  zpo_models:
+  zpam_models:
     driver: local
     
 services:
@@ -335,8 +335,8 @@ docker cp $(docker-compose -f docker/docker-compose.yml ps -q redis):/tmp/dump.r
 
 ```bash
 # Backup trained models
-docker-compose -f docker/docker-compose.yml exec zpo tar -czf /tmp/models_backup.tar.gz /app/models/
-docker cp $(docker-compose -f docker/docker-compose.yml ps -q zpo):/tmp/models_backup.tar.gz ./backups/
+docker-compose -f docker/docker-compose.yml exec zpam tar -czf /tmp/models_backup.tar.gz /app/models/
+docker cp $(docker-compose -f docker/docker-compose.yml ps -q zpam):/tmp/models_backup.tar.gz ./backups/
 ```
 
 ## 📈 Performance Tuning
@@ -354,15 +354,15 @@ redis:
     --tcp-keepalive 60
 ```
 
-### ZPO Optimization
+### ZPAM Optimization
 
 ```yaml
-# ZPO performance environment
+# ZPAM performance environment
 environment:
   - GOMAXPROCS=4
   - GOMEMLIMIT=256MiB
-  - ZPO_BUFFER_SIZE=2000
-  - ZPO_WORKER_COUNT=8
+  - ZPAM_BUFFER_SIZE=2000
+  - ZPAM_WORKER_COUNT=8
 ```
 
 ## 🐛 Troubleshooting
@@ -372,7 +372,7 @@ environment:
 #### Container Won't Start
 ```bash
 # Check logs for errors
-docker-compose -f docker/docker-compose.yml logs zpo
+docker-compose -f docker/docker-compose.yml logs zpam
 
 # Verify configuration
 docker-compose -f docker/docker-compose.yml config
@@ -385,7 +385,7 @@ docker system prune # if needed
 #### Redis Connection Issues
 ```bash
 # Test Redis connectivity
-docker-compose -f docker/docker-compose.yml exec zpo redis-cli -h redis ping
+docker-compose -f docker/docker-compose.yml exec zpam redis-cli -h redis ping
 
 # Check Redis logs
 docker-compose -f docker/docker-compose.yml logs redis
@@ -403,17 +403,17 @@ docker stats
 docker-compose -f docker/docker-compose.yml ps
 
 # Run performance benchmark
-docker-compose -f docker/docker-compose.yml exec zpo ./testing/benchmark_simple.sh
+docker-compose -f docker/docker-compose.yml exec zpam ./testing/benchmark_simple.sh
 ```
 
 ### Debug Mode
 
 ```bash
 # Enable debug logging
-docker-compose -f docker/docker-compose.yml exec zpo ./zpo --log-level debug
+docker-compose -f docker/docker-compose.yml exec zpam ./zpam --log-level debug
 
 # Interactive debugging
-docker-compose -f docker/docker-compose.yml exec zpo bash
+docker-compose -f docker/docker-compose.yml exec zpam bash
 ```
 
 ## 🚀 Deployment Scenarios
@@ -439,8 +439,8 @@ docker-compose -f docker/docker-compose.yml up -d
 ### Production Environment
 ```bash
 # Full production deployment
-docker-compose -f docker/docker-compose.yml up -d --scale zpo=3
-# - Multiple ZPO instances
+docker-compose -f docker/docker-compose.yml up -d --scale zpam=3
+# - Multiple ZPAM instances
 # - Redis clustering
 # - Load balancing
 # - Monitoring & alerting

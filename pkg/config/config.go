@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config represents ZPO configuration
+// Config represents ZPAM configuration
 type Config struct {
 	// Spam detection settings
 	Detection DetectionConfig `yaml:"detection"`
@@ -251,7 +251,7 @@ type MilterConfig struct {
 
 	// Network and address for milter socket
 	Network string `yaml:"network"` // "tcp" or "unix"
-	Address string `yaml:"address"` // "127.0.0.1:7357" or "/tmp/zpo.sock"
+	Address string `yaml:"address"` // "127.0.0.1:7357" or "/tmp/zpam.sock"
 
 	// Connection settings
 	ReadTimeoutMs  int `yaml:"read_timeout_ms"`
@@ -288,10 +288,10 @@ type MilterConfig struct {
 
 	// Header modifications
 	AddSpamHeaders   bool   `yaml:"add_spam_headers"`   // Add X-Spam-* headers
-	SpamHeaderPrefix string `yaml:"spam_header_prefix"` // Prefix for spam headers (default: "X-ZPO-")
+	SpamHeaderPrefix string `yaml:"spam_header_prefix"` // Prefix for spam headers (default: "X-ZPAM-")
 }
 
-// DefaultConfig returns ZPO default configuration
+// DefaultConfig returns ZPAM default configuration
 func DefaultConfig() *Config {
 	return &Config{
 		Detection: DetectionConfig{
@@ -367,7 +367,7 @@ func DefaultConfig() *Config {
 			Backend:   "file",
 			AutoTrain: false,
 			File: FileBackendConfig{
-				ModelPath:         "zpo-model.json",
+				ModelPath:         "zpam-model.json",
 				MinWordLength:     3,
 				MaxWordLength:     20,
 				CaseSensitive:     false,
@@ -381,7 +381,7 @@ func DefaultConfig() *Config {
 			},
 			Redis: RedisBackendConfig{
 				RedisURL:        "redis://localhost:6379",
-				KeyPrefix:       "zpo:bayes",
+				KeyPrefix:       "zpam:bayes",
 				DatabaseNum:     0,
 				OSBWindowSize:   5,
 				MinTokenLength:  3,
@@ -442,7 +442,7 @@ func DefaultConfig() *Config {
 			RejectMessage:            "",
 			QuarantineMessage:        "",
 			AddSpamHeaders:           true,
-			SpamHeaderPrefix:         "X-ZPO-",
+			SpamHeaderPrefix:         "X-ZPAM-",
 		},
 		Plugins: PluginsConfig{
 			Enabled:       false,      // Disabled by default

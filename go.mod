@@ -1,4 +1,4 @@
-module github.com/zpo/spam-filter
+module github.com/zpam/spam-filter
 
 go 1.24.0
 

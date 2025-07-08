@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/filter"
-	"github.com/zpo/spam-filter/pkg/plugins"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/plugins"
 )
 
 var (
@@ -19,10 +19,10 @@ var (
 
 var pluginsCmd = &cobra.Command{
 	Use:   "plugins",
-	Short: "Manage and test ZPO plugins",
-	Long: `Commands to manage and test ZPO spam detection plugins.
+	Short: "Manage and test ZPAM plugins",
+	Long: `Commands to manage and test ZPAM spam detection plugins.
 
-ZPO supports various plugins for extending spam detection capabilities:
+ZPAM supports various plugins for extending spam detection capabilities:
 - SpamAssassin integration
 - Rspamd integration  
 - Custom rules engine
@@ -30,12 +30,12 @@ ZPO supports various plugins for extending spam detection capabilities:
 - Machine learning models
 
 Examples:
-  zpo plugins list                    # List all available plugins
-  zpo plugins test email.eml          # Test all enabled plugins on an email
-  zpo plugins test-one spamassassin email.eml  # Test specific plugin
-  zpo plugins stats                   # Show plugin execution statistics
-  zpo plugins enable spamassassin     # Enable a plugin
-  zpo plugins disable rspamd          # Disable a plugin`,
+  zpam plugins list                    # List all available plugins
+  zpam plugins test email.eml          # Test all enabled plugins on an email
+  zpam plugins test-one spamassassin email.eml  # Test specific plugin
+  zpam plugins stats                   # Show plugin execution statistics
+  zpam plugins enable spamassassin     # Enable a plugin
+  zpam plugins disable rspamd          # Disable a plugin`,
 }
 
 var pluginsListCmd = &cobra.Command{
@@ -85,7 +85,7 @@ var pluginsEnableCmd = &cobra.Command{
 	Long: `Enable a plugin in the configuration.
 
 This command modifies the configuration to enable the specified plugin.
-You may need to restart ZPO for changes to take effect.`,
+You may need to restart ZPAM for changes to take effect.`,
 	Args: cobra.ExactArgs(1),
 	Run:  runPluginsEnable,
 }
@@ -96,7 +96,7 @@ var pluginsDisableCmd = &cobra.Command{
 	Long: `Disable a plugin in the configuration.
 
 This command modifies the configuration to disable the specified plugin.
-You may need to restart ZPO for changes to take effect.`,
+You may need to restart ZPAM for changes to take effect.`,
 	Args: cobra.ExactArgs(1),
 	Run:  runPluginsDisable,
 }
@@ -128,7 +128,7 @@ func runPluginsList(cmd *cobra.Command, args []string) {
 	// Create spam filter to initialize plugin manager
 	sf := filter.NewSpamFilterWithConfig(cfg)
 
-	fmt.Println("ZPO Plugins Status")
+	fmt.Println("ZPAM Plugins Status")
 	fmt.Println("==================")
 	fmt.Println()
 
@@ -209,11 +209,11 @@ func runPluginsList(cmd *cobra.Command, args []string) {
 
 	fmt.Println()
 	fmt.Println("To enable plugins:")
-	fmt.Println("  zpo plugins enable spamassassin")
-	fmt.Println("  zpo plugins enable rspamd")
+	fmt.Println("  zpam plugins enable spamassassin")
+	fmt.Println("  zpam plugins enable rspamd")
 	fmt.Println()
 	fmt.Println("To test plugins:")
-	fmt.Println("  zpo plugins test examples/test_headers.eml")
+	fmt.Println("  zpam plugins test examples/test_headers.eml")
 
 	_ = sf // Use sf to avoid unused variable warning
 }
@@ -251,13 +251,13 @@ func runPluginsTest(cmd *cobra.Command, args []string) {
 	fmt.Printf("Subject: %s\n", emailObj.Subject)
 	fmt.Println()
 
-	// Test ZPO native scoring first
+	// Test ZPAM native scoring first
 	start := time.Now()
-	zpoScore := sf.CalculateSpamScore(emailObj)
-	zpoTime := time.Since(start)
-	zpoNormalized := sf.NormalizeScore(zpoScore)
+	zpamScore := sf.CalculateSpamScore(emailObj)
+	zpamTime := time.Since(start)
+	zpamNormalized := sf.NormalizeScore(zpamScore)
 
-	fmt.Printf("ZPO Native Score: %.2f (Level %d) in %v\n", zpoScore, zpoNormalized, zpoTime)
+	fmt.Printf("ZPAM Native Score: %.2f (Level %d) in %v\n", zpamScore, zpamNormalized, zpamTime)
 	fmt.Println()
 
 	// Test plugins
@@ -294,7 +294,7 @@ func runPluginsTest(cmd *cobra.Command, args []string) {
 
 	if len(pluginConfigs) == 0 {
 		fmt.Println("No plugins enabled. Enable plugins with:")
-		fmt.Println("  zpo plugins enable spamassassin")
+		fmt.Println("  zpam plugins enable spamassassin")
 		return
 	}
 
@@ -352,7 +352,7 @@ func runPluginsTest(cmd *cobra.Command, args []string) {
 		fmt.Printf("Combined Plugin Score: %.2f\n", combinedScore)
 	}
 
-	finalScore := zpoScore + combinedScore
+	finalScore := zpamScore + combinedScore
 	finalNormalized := sf.NormalizeScore(finalScore)
 
 	fmt.Printf("Final Combined Score: %.2f (Level %d)\n", finalScore, finalNormalized)
@@ -522,8 +522,8 @@ func runPluginsStats(cmd *cobra.Command, args []string) {
 	fmt.Println("Run some plugin tests to see execution statistics here.")
 	fmt.Println()
 	fmt.Println("Commands to generate stats:")
-	fmt.Println("  zpo plugins test examples/test_headers.eml")
-	fmt.Println("  zpo plugins test-one spamassassin examples/test_headers.eml")
+	fmt.Println("  zpam plugins test examples/test_headers.eml")
+	fmt.Println("  zpam plugins test-one spamassassin examples/test_headers.eml")
 }
 
 func runPluginsEnable(cmd *cobra.Command, args []string) {

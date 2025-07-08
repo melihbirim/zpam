@@ -1,4 +1,4 @@
-# ZPO Spam Filter Configuration - DNS Testing Mode
+# ZPAM Spam Filter Configuration - DNS Testing Mode
 # Optimized for internal DNS testing with controlled environment
 
 detection:
@@ -106,7 +106,7 @@ headers:
 # Word frequency learning
 learning:
   enabled: true
-  model_path: "zpo-model.json"
+  model_path: "zpam-model.json"
   min_word_length: 3
   max_word_length: 20
   case_sensitive: false

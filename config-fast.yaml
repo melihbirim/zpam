@@ -1,4 +1,4 @@
-# ZPO Spam Filter Configuration - Performance Optimized
+# ZPAM Spam Filter Configuration - Performance Optimized
 # This configuration disables slow DNS lookups for maximum speed
 
 detection:
@@ -113,7 +113,7 @@ logging:
 # Word frequency learning settings
 learning:
   enabled: true               # Enable Bayesian word learning
-  model_path: "zpo-model.json" # Path to save/load learned model
+  model_path: "zpam-model.json" # Path to save/load learned model
   min_word_length: 3          # Minimum word length for learning
   max_word_length: 20         # Maximum word length for learning
   case_sensitive: false       # Whether to preserve case

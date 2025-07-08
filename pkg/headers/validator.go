@@ -2,13 +2,13 @@ package headers
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"net"
 
-	"github.com/zpo/spam-filter/pkg/dns"
+	"github.com/zpam/spam-filter/pkg/dns"
 )
 
 // ValidationResult contains email header validation results
@@ -17,59 +17,59 @@ type ValidationResult struct {
 	SPF   SPFResult   `json:"spf"`
 	DKIM  DKIMResult  `json:"dkim"`
 	DMARC DMARCResult `json:"dmarc"`
-	
+
 	// Routing analysis
 	Routing RoutingResult `json:"routing"`
-	
+
 	// Header anomalies
 	Anomalies []string `json:"anomalies"`
-	
+
 	// Overall scores
 	AuthScore    float64 `json:"auth_score"`    // 0-100 (higher = better auth)
 	SuspiciScore float64 `json:"suspici_score"` // 0-100 (higher = more suspicious)
-	
+
 	// Validation metadata
-	ValidatedAt time.Time `json:"validated_at"`
+	ValidatedAt time.Time     `json:"validated_at"`
 	Duration    time.Duration `json:"duration"`
-	
+
 	// Cache performance statistics
 	CacheStats CachePerformance `json:"cache_stats"`
 }
 
 // CachePerformance contains cache performance metrics
 type CachePerformance struct {
-	HitRate       float64 `json:"hit_rate"`         // Overall DNS cache hit rate (%)
-	TotalEntries  int64   `json:"total_entries"`    // Total cached entries
-	TotalHits     int64   `json:"total_hits"`       // Total cache hits
-	TotalMisses   int64   `json:"total_misses"`     // Total cache misses
-	TotalErrors   int64   `json:"total_errors"`     // Total DNS errors
-	TotalEvictions int64  `json:"total_evictions"`  // Total cache evictions
+	HitRate        float64 `json:"hit_rate"`        // Overall DNS cache hit rate (%)
+	TotalEntries   int64   `json:"total_entries"`   // Total cached entries
+	TotalHits      int64   `json:"total_hits"`      // Total cache hits
+	TotalMisses    int64   `json:"total_misses"`    // Total cache misses
+	TotalErrors    int64   `json:"total_errors"`    // Total DNS errors
+	TotalEvictions int64   `json:"total_evictions"` // Total cache evictions
 }
 
 // SPFResult contains SPF validation results
 type SPFResult struct {
 	Valid       bool     `json:"valid"`
 	Record      string   `json:"record"`
-	Result      string   `json:"result"`      // pass, fail, softfail, neutral, none, temperror, permerror
+	Result      string   `json:"result"` // pass, fail, softfail, neutral, none, temperror, permerror
 	Explanation string   `json:"explanation"`
 	IPMatches   []string `json:"ip_matches"`
 }
 
 // DKIMResult contains DKIM validation results
 type DKIMResult struct {
-	Valid         bool     `json:"valid"`
-	Signatures    []string `json:"signatures"`
-	Domains       []string `json:"domains"`
-	Selectors     []string `json:"selectors"`
-	Algorithms    []string `json:"algorithms"`
-	Explanation   string   `json:"explanation"`
+	Valid       bool     `json:"valid"`
+	Signatures  []string `json:"signatures"`
+	Domains     []string `json:"domains"`
+	Selectors   []string `json:"selectors"`
+	Algorithms  []string `json:"algorithms"`
+	Explanation string   `json:"explanation"`
 }
 
 // DMARCResult contains DMARC validation results
 type DMARCResult struct {
 	Valid       bool   `json:"valid"`
-	Policy      string `json:"policy"`      // none, quarantine, reject
-	Alignment   string `json:"alignment"`   // relaxed, strict
+	Policy      string `json:"policy"`    // none, quarantine, reject
+	Alignment   string `json:"alignment"` // relaxed, strict
 	Percentage  int    `json:"percentage"`
 	Explanation string `json:"explanation"`
 }
@@ -112,18 +112,18 @@ type Config struct {
 	EnableSPF   bool `json:"enable_spf"`
 	EnableDKIM  bool `json:"enable_dkim"`
 	EnableDMARC bool `json:"enable_dmarc"`
-	
+
 	// Timeouts
 	DNSTimeout time.Duration `json:"dns_timeout"`
-	
+
 	// Thresholds
 	MaxHopCount           int `json:"max_hop_count"`
 	SuspiciousServerScore int `json:"suspicious_server_score"`
-	
+
 	// Known suspicious patterns
 	SuspiciousServers []string `json:"suspicious_servers"`
 	OpenRelayPatterns []string `json:"open_relay_patterns"`
-	
+
 	// Cache settings
 	CacheSize int           `json:"cache_size"`
 	CacheTTL  time.Duration `json:"cache_ttl"`
@@ -156,7 +156,7 @@ func NewValidator(config *Config) *Validator {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	// Create DNS client with caching
 	dnsConfig := dns.Config{
 		Timeout:       config.DNSTimeout,
@@ -164,7 +164,7 @@ func NewValidator(config *Config) *Validator {
 		CacheTTL:      config.CacheTTL,
 		EnableCaching: true,
 	}
-	
+
 	return &Validator{
 		config:    config,
 		dnsClient: dns.NewClient(dnsConfig),
@@ -176,7 +176,7 @@ func NewTestValidator(config *Config, testServer *dns.TestServer) *Validator {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	// Create DNS client with test server
 	dnsConfig := dns.Config{
 		Timeout:       config.DNSTimeout,
@@ -184,9 +184,9 @@ func NewTestValidator(config *Config, testServer *dns.TestServer) *Validator {
 		CacheTTL:      config.CacheTTL,
 		EnableCaching: true,
 	}
-	
+
 	testClient := dns.NewTestClient(dnsConfig, testServer)
-	
+
 	return &Validator{
 		config:    config,
 		dnsClient: testClient,
@@ -196,49 +196,49 @@ func NewTestValidator(config *Config, testServer *dns.TestServer) *Validator {
 // ValidateHeaders validates all email headers
 func (v *Validator) ValidateHeaders(headers map[string]string) *ValidationResult {
 	start := time.Now()
-	
+
 	result := &ValidationResult{
 		ValidatedAt: start,
 		Anomalies:   make([]string, 0),
 	}
-	
+
 	// Extract key information
 	from := headers["From"]
 	returnPath := headers["Return-Path"]
 	received := v.extractReceivedHeaders(headers)
-	
+
 	// Domain extraction
 	fromDomain := v.extractDomain(from)
 	returnPathDomain := v.extractDomain(returnPath)
-	
+
 	// SPF Validation
 	if v.config.EnableSPF && fromDomain != "" {
 		result.SPF = v.validateSPF(fromDomain, v.extractClientIP(received))
 	}
-	
+
 	// DKIM Validation
 	if v.config.EnableDKIM {
 		result.DKIM = v.validateDKIM(headers)
 	}
-	
+
 	// DMARC Validation
 	if v.config.EnableDMARC && fromDomain != "" {
 		result.DMARC = v.validateDMARC(fromDomain, result.SPF, result.DKIM)
 	}
-	
+
 	// Routing Analysis
 	result.Routing = v.analyzeRouting(received)
-	
+
 	// Header Anomalies
 	result.Anomalies = v.detectAnomalies(headers, fromDomain, returnPathDomain)
-	
+
 	// Calculate scores
 	result.AuthScore = v.calculateAuthScore(result)
 	result.SuspiciScore = v.calculateSuspiciousScore(result)
-	
+
 	// Collect cache statistics
 	result.CacheStats = v.collectCacheStats()
-	
+
 	result.Duration = time.Since(start)
 	return result
 }
@@ -248,7 +248,7 @@ func (v *Validator) validateSPF(domain, clientIP string) SPFResult {
 	result := SPFResult{
 		IPMatches: make([]string, 0),
 	}
-	
+
 	// Get SPF record using DNS client
 	spfRecord, err := v.dnsClient.GetSPFRecord(domain)
 	if err != nil {
@@ -256,11 +256,11 @@ func (v *Validator) validateSPF(domain, clientIP string) SPFResult {
 		result.Explanation = "No SPF record found"
 		return result
 	}
-	
+
 	result.Record = spfRecord
 	result.Result = v.evaluateSPF(spfRecord, clientIP, domain)
 	result.Valid = (result.Result == "pass")
-	
+
 	return result
 }
 
@@ -269,10 +269,10 @@ func (v *Validator) evaluateSPF(record, clientIP, domain string) string {
 	if clientIP == "" {
 		return "neutral"
 	}
-	
+
 	// Parse SPF mechanisms
 	mechanisms := strings.Fields(record)
-	
+
 	for _, mechanism := range mechanisms[1:] { // Skip "v=spf1"
 		if strings.HasPrefix(mechanism, "ip4:") {
 			cidr := strings.TrimPrefix(mechanism, "ip4:")
@@ -306,7 +306,7 @@ func (v *Validator) evaluateSPF(record, clientIP, domain string) string {
 			return "softfail"
 		}
 	}
-	
+
 	// Default is usually neutral or soft fail
 	return "neutral"
 }
@@ -319,21 +319,21 @@ func (v *Validator) validateDKIM(headers map[string]string) DKIMResult {
 		Selectors:  make([]string, 0),
 		Algorithms: make([]string, 0),
 	}
-	
+
 	// Look for DKIM-Signature header
 	dkimHeader := headers["DKIM-Signature"]
 	if dkimHeader == "" {
 		result.Explanation = "No DKIM signature found"
 		return result
 	}
-	
+
 	result.Signatures = append(result.Signatures, dkimHeader)
-	
+
 	// Parse DKIM signature components
 	domain := v.extractDKIMParam(dkimHeader, "d")
 	selector := v.extractDKIMParam(dkimHeader, "s")
 	algorithm := v.extractDKIMParam(dkimHeader, "a")
-	
+
 	if domain != "" {
 		result.Domains = append(result.Domains, domain)
 	}
@@ -343,37 +343,37 @@ func (v *Validator) validateDKIM(headers map[string]string) DKIMResult {
 	if algorithm != "" {
 		result.Algorithms = append(result.Algorithms, algorithm)
 	}
-	
+
 	// Simplified validation (in production, would verify signature)
 	result.Valid = (domain != "" && selector != "" && algorithm != "")
-	
+
 	if result.Valid {
 		result.Explanation = "DKIM signature appears valid"
 	} else {
 		result.Explanation = "DKIM signature malformed"
 	}
-	
+
 	return result
 }
 
 // validateDMARC validates DMARC policy
 func (v *Validator) validateDMARC(domain string, spf SPFResult, dkim DKIMResult) DMARCResult {
 	result := DMARCResult{}
-	
+
 	// Get DMARC record using DNS client
 	dmarcRecord, err := v.dnsClient.GetDMARCRecord(domain)
 	if err != nil {
 		result.Explanation = "No DMARC record found"
 		return result
 	}
-	
+
 	// Parse DMARC policy
 	result.Policy = v.extractDMARCParam(dmarcRecord, "p")
 	result.Alignment = v.extractDMARCParam(dmarcRecord, "adkim")
 	if result.Alignment == "" {
 		result.Alignment = "relaxed" // Default
 	}
-	
+
 	// Parse percentage
 	if pct := v.extractDMARCParam(dmarcRecord, "pct"); pct != "" {
 		if percentage, err := strconv.Atoi(pct); err == nil {
@@ -382,19 +382,19 @@ func (v *Validator) validateDMARC(domain string, spf SPFResult, dkim DKIMResult)
 	} else {
 		result.Percentage = 100 // Default
 	}
-	
+
 	// Check alignment (simplified)
 	spfAligned := (spf.Result == "pass")
 	dkimAligned := dkim.Valid
-	
+
 	result.Valid = (spfAligned || dkimAligned)
-	
+
 	if result.Valid {
 		result.Explanation = "DMARC alignment satisfied"
 	} else {
 		result.Explanation = "DMARC alignment failed"
 	}
-	
+
 	return result
 }
 
@@ -408,49 +408,49 @@ func (v *Validator) analyzeRouting(received []string) RoutingResult {
 		TimingAnomalies:  make([]string, 0),
 		ReverseDNSIssues: make([]string, 0),
 	}
-	
+
 	// Analyze each hop
 	for i, hop := range received {
 		// Check for suspicious servers
 		for _, suspicious := range v.config.SuspiciousServers {
 			if strings.Contains(strings.ToLower(hop), suspicious) {
-				result.SuspiciousHops = append(result.SuspiciousHops, 
+				result.SuspiciousHops = append(result.SuspiciousHops,
 					fmt.Sprintf("Hop %d: suspicious server pattern '%s'", i+1, suspicious))
 			}
 		}
-		
+
 		// Check for open relay patterns
 		for _, pattern := range v.config.OpenRelayPatterns {
 			if strings.Contains(strings.ToLower(hop), pattern) {
-				result.OpenRelays = append(result.OpenRelays, 
+				result.OpenRelays = append(result.OpenRelays,
 					fmt.Sprintf("Hop %d: open relay pattern '%s'", i+1, pattern))
 			}
 		}
-		
+
 		// Extract and validate IPs
 		ips := v.extractIPs(hop)
 		for _, ip := range ips {
 			// Check reverse DNS
 			if !v.validateReverseDNS(ip) {
-				result.ReverseDNSIssues = append(result.ReverseDNSIssues, 
+				result.ReverseDNSIssues = append(result.ReverseDNSIssues,
 					fmt.Sprintf("Hop %d: no reverse DNS for %s", i+1, ip))
 			}
 		}
 	}
-	
+
 	return result
 }
 
 // detectAnomalies detects header anomalies
 func (v *Validator) detectAnomalies(headers map[string]string, fromDomain, returnPathDomain string) []string {
 	anomalies := make([]string, 0)
-	
+
 	// Check From/Return-Path domain mismatch
 	if fromDomain != "" && returnPathDomain != "" && fromDomain != returnPathDomain {
-		anomalies = append(anomalies, 
+		anomalies = append(anomalies,
 			fmt.Sprintf("Domain mismatch: From=%s, Return-Path=%s", fromDomain, returnPathDomain))
 	}
-	
+
 	// Check for missing critical headers
 	criticalHeaders := []string{"From", "Date", "Message-ID"}
 	for _, header := range criticalHeaders {
@@ -458,16 +458,16 @@ func (v *Validator) detectAnomalies(headers map[string]string, fromDomain, retur
 			anomalies = append(anomalies, fmt.Sprintf("Missing header: %s", header))
 		}
 	}
-	
+
 	// Check for suspicious header values
 	if messageID := headers["Message-ID"]; messageID != "" {
 		if !v.isValidMessageID(messageID) {
 			anomalies = append(anomalies, "Invalid Message-ID format")
 		}
 	}
-	
+
 	// Check for duplicate headers (simplified - would need full email parsing)
-	
+
 	// Check Date header
 	if date := headers["Date"]; date != "" {
 		if !v.isValidDate(date) {
@@ -484,7 +484,7 @@ func (v *Validator) detectAnomalies(headers map[string]string, fromDomain, retur
 			}
 		}
 	}
-	
+
 	return anomalies
 }
 
@@ -494,7 +494,7 @@ func (v *Validator) extractDomain(email string) string {
 	if email == "" {
 		return ""
 	}
-	
+
 	// Extract from angle brackets if present
 	if strings.Contains(email, "<") && strings.Contains(email, ">") {
 		start := strings.Index(email, "<") + 1
@@ -503,24 +503,24 @@ func (v *Validator) extractDomain(email string) string {
 			email = email[start:end]
 		}
 	}
-	
+
 	// Extract domain part
 	parts := strings.Split(email, "@")
 	if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
 		return strings.ToLower(parts[1])
 	}
-	
+
 	return ""
 }
 
 func (v *Validator) extractReceivedHeaders(headers map[string]string) []string {
 	var received []string
-	
+
 	// In a real implementation, would need to handle multiple Received headers
 	if r := headers["Received"]; r != "" {
 		received = append(received, r)
 	}
-	
+
 	return received
 }
 
@@ -528,14 +528,14 @@ func (v *Validator) extractClientIP(received []string) string {
 	if len(received) == 0 {
 		return ""
 	}
-	
+
 	// Extract IP from first Received header (simplified)
 	ipRegex := regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
 	matches := ipRegex.FindStringSubmatch(received[0])
 	if len(matches) > 0 {
 		return matches[0]
 	}
-	
+
 	return ""
 }
 
@@ -569,17 +569,17 @@ func (v *Validator) ipInCIDR(ip, cidr string) bool {
 	if !strings.Contains(cidr, "/") {
 		return ip == cidr
 	}
-	
+
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return false
 	}
-	
+
 	testIP := net.ParseIP(ip)
 	if testIP == nil {
 		return false
 	}
-	
+
 	return ipNet.Contains(testIP)
 }
 
@@ -612,10 +612,10 @@ func (v *Validator) isValidMessageID(messageID string) bool {
 	if !strings.HasPrefix(messageID, "<") || !strings.HasSuffix(messageID, ">") {
 		return false
 	}
-	
+
 	// Extract content between angle brackets
 	content := messageID[1 : len(messageID)-1]
-	
+
 	// Must contain @ and have content before and after @
 	parts := strings.Split(content, "@")
 	return len(parts) == 2 && parts[0] != "" && parts[1] != ""
@@ -629,19 +629,19 @@ func (v *Validator) isValidDate(date string) bool {
 		"Mon, 2 Jan 2006 15:04:05 -0700",
 		"2 Jan 2006 15:04:05 -0700",
 	}
-	
+
 	for _, format := range formats {
 		if _, err := time.Parse(format, date); err == nil {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
 func (v *Validator) calculateAuthScore(result *ValidationResult) float64 {
 	score := 50.0 // Base score
-	
+
 	// SPF contribution (30 points)
 	switch result.SPF.Result {
 	case "pass":
@@ -651,24 +651,24 @@ func (v *Validator) calculateAuthScore(result *ValidationResult) float64 {
 	case "softfail":
 		score -= 10
 	}
-	
+
 	// DKIM contribution (30 points)
 	if result.DKIM.Valid {
 		score += 30
 	} else {
 		score -= 15
 	}
-	
+
 	// DMARC contribution (20 points)
 	if result.DMARC.Valid {
 		score += 20
 	} else {
 		score -= 10
 	}
-	
+
 	// Penalties for anomalies
 	score -= float64(len(result.Anomalies)) * 5
-	
+
 	// Clamp to 0-100
 	if score < 0 {
 		score = 0
@@ -676,53 +676,53 @@ func (v *Validator) calculateAuthScore(result *ValidationResult) float64 {
 	if score > 100 {
 		score = 100
 	}
-	
+
 	return score
 }
 
 func (v *Validator) calculateSuspiciousScore(result *ValidationResult) float64 {
 	score := 0.0
-	
+
 	// Authentication failures
 	if result.SPF.Result == "fail" {
 		score += 30
 	} else if result.SPF.Result == "softfail" {
 		score += 15
 	}
-	
+
 	if !result.DKIM.Valid {
 		score += 20
 	}
-	
+
 	if !result.DMARC.Valid {
 		score += 25
 	}
-	
+
 	// Routing issues
 	score += float64(len(result.Routing.SuspiciousHops)) * 10
 	score += float64(len(result.Routing.OpenRelays)) * 15
 	score += float64(len(result.Routing.ReverseDNSIssues)) * 5
-	
+
 	// Header anomalies
 	score += float64(len(result.Anomalies)) * 8
-	
+
 	// Excessive hops
 	if result.Routing.HopCount > v.config.MaxHopCount {
 		score += 20
 	}
-	
+
 	// Clamp to 0-100
 	if score > 100 {
 		score = 100
 	}
-	
+
 	return score
 }
 
 // collectCacheStats collects cache performance statistics
 func (v *Validator) collectCacheStats() CachePerformance {
 	stats := v.dnsClient.GetStats()
-	
+
 	return CachePerformance{
 		HitRate:        v.dnsClient.HitRate(),
 		TotalEntries:   stats.Entries,
@@ -746,4 +746,4 @@ func (v *Validator) ClearCaches() {
 // ResetCacheStats resets all cache statistics
 func (v *Validator) ResetCacheStats() {
 	v.dnsClient.ResetStats()
-} 
+}

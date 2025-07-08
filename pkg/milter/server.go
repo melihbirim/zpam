@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/d--j/go-milter"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
-// Server represents the ZPO milter server
+// Server represents the ZPAM milter server
 type Server struct {
 	config     *config.Config
 	spamFilter *filter.SpamFilter
@@ -162,4 +162,4 @@ func (s *Server) Stats() ServerStats {
 // ServerStats contains server statistics
 type ServerStats struct {
 	MilterCount uint64 // Total number of milter instances created
-} 
+}

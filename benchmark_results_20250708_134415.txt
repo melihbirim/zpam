@@ -1,0 +1,28 @@
+🚀 ZPO Performance Benchmark - 20250708_134415
+=====================================================
+Testing ZPO spam filter performance with various email batch sizes
+
+🔍 Checking container status...
+✅ Container ready
+
+📊 Starting Performance Tests
+==============================
+
+🧪 Testing: Redis Backend - 100 emails with 100 emails...
+  Redis Backend - 100 emails: 100 emails in 1.75s (57.05 emails/sec, 10.00ms avg)
+                           : Spam: 22, Ham: 78
+
+🧪 Testing: Redis Backend - 500 emails with 500 emails...
+  Redis Backend - 500 emails: 500 emails in 0.77s (649.46 emails/sec, 0.00ms avg)
+                           : Spam: 255, Ham: 245
+
+🧪 Testing: Redis Backend - 1000 emails with 1000 emails...
+  Redis Backend - 1000 emails: 1000 emails in 1.71s (584.48 emails/sec, 0.00ms avg)
+                           : Spam: 663, Ham: 337
+
+🧪 Testing: Redis Backend - 2000 emails with 2000 emails...
+  Redis Backend - 2000 emails: 2000 emails in 2.50s (800.82 emails/sec, 0.00ms avg)
+                           : Spam: 1613, Ham: 387
+
+🔄 Multi-Instance Test (1000 emails)
+====================================

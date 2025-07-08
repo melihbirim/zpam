@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
 var (
@@ -21,28 +21,28 @@ var (
 
 var quickstartCmd = &cobra.Command{
 	Use:   "quickstart",
-	Short: "Interactive setup wizard for quick ZPO configuration",
-	Long: `Get ZPO running in under 5 minutes with optimal configuration.
+	Short: "Interactive setup wizard for quick ZPAM configuration",
+	Long: `Get ZPAM running in under 5 minutes with optimal configuration.
 
 This command will:
 1. Auto-detect your system capabilities (Redis, etc.)
 2. Generate an optimal configuration file
-3. Test ZPO with sample emails
-4. Show you how to use ZPO effectively
+3. Test ZPAM with sample emails
+4. Show you how to use ZPAM effectively
 
-Perfect for first-time users who want to see ZPO in action immediately!`,
+Perfect for first-time users who want to see ZPAM in action immediately!`,
 	RunE: runQuickstart,
 }
 
 func runQuickstart(cmd *cobra.Command, args []string) error {
-	fmt.Printf("🫏 ZPO Interactive Quickstart\n")
+	fmt.Printf("🫏 ZPAM Interactive Quickstart\n")
 	fmt.Printf("════════════════════════════════════════════════\n")
 	fmt.Printf("Interactive setup wizard - get running in 5 minutes!\n\n")
 
 	// Check if automated install was already run
 	if _, err := os.Stat("config-quickstart.yaml"); err == nil && !quickstartForce {
-		fmt.Printf("✅ Found existing ZPO configuration (config-quickstart.yaml)\n")
-		fmt.Printf("💡 For fully automated setup, use: ./zpo install\n\n")
+		fmt.Printf("✅ Found existing ZPAM configuration (config-quickstart.yaml)\n")
+		fmt.Printf("💡 For fully automated setup, use: ./zpam install\n\n")
 		fmt.Printf("Would you like to run a demo with the existing configuration? [y/N]: ")
 		var response string
 		fmt.Scanln(&response)
@@ -50,13 +50,13 @@ func runQuickstart(cmd *cobra.Command, args []string) error {
 			return runQuickDemo()
 		}
 		if !quickstartForce {
-			fmt.Printf("💡 Use --force to reconfigure, or './zpo install --force' for automated setup\n")
+			fmt.Printf("💡 Use --force to reconfigure, or './zpam install --force' for automated setup\n")
 			return nil
 		}
 	}
 
 	// Show install option
-	fmt.Printf("💡 Pro tip: For fully automated setup, use './zpo install'\n")
+	fmt.Printf("💡 Pro tip: For fully automated setup, use './zpam install'\n")
 	fmt.Printf("This interactive mode gives you more control over configuration.\n\n")
 
 	// Step 1: System Detection
@@ -79,7 +79,7 @@ func runQuickstart(cmd *cobra.Command, args []string) error {
 		fmt.Printf("\n🧪 Step 3: Testing with Sample Emails...\n")
 		if err := runSampleTests(cfg); err != nil {
 			fmt.Printf("⚠️  Sample tests failed: %v\n", err)
-			fmt.Printf("💡 ZPO is still configured and ready to use!\n")
+			fmt.Printf("💡 ZPAM is still configured and ready to use!\n")
 		}
 
 		// Offer training if available
@@ -101,7 +101,7 @@ func runQuickstart(cmd *cobra.Command, args []string) error {
 }
 
 func runQuickDemo() error {
-	fmt.Printf("🎬 Running ZPO demo with existing configuration...\n\n")
+	fmt.Printf("🎬 Running ZPAM demo with existing configuration...\n\n")
 
 	// Load existing config
 	cfg, err := config.LoadConfig("config-quickstart.yaml")
@@ -110,7 +110,7 @@ func runQuickDemo() error {
 	}
 
 	// Run quick tests
-	fmt.Printf("🧪 Testing ZPO with sample emails...\n")
+	fmt.Printf("🧪 Testing ZPAM with sample emails...\n")
 	if err := runSampleTests(cfg); err != nil {
 		fmt.Printf("⚠️  Demo failed: %v\n", err)
 	}
@@ -119,10 +119,10 @@ func runQuickDemo() error {
 	fmt.Printf("\n🚀 Try these commands:\n")
 	samples := findSampleEmails()
 	if len(samples) > 0 {
-		fmt.Printf("  ./zpo test %s --config config-quickstart.yaml\n", samples[0])
+		fmt.Printf("  ./zpam test %s --config config-quickstart.yaml\n", samples[0])
 	}
-	fmt.Printf("  ./zpo status --config config-quickstart.yaml\n")
-	fmt.Printf("  ./zpo monitor --config config-quickstart.yaml\n")
+	fmt.Printf("  ./zpam status --config config-quickstart.yaml\n")
+	fmt.Printf("  ./zpam monitor --config config-quickstart.yaml\n")
 
 	return nil
 }
@@ -132,7 +132,7 @@ func runQuickTraining(configPath string) {
 
 	// Use the enhanced training system
 	if _, err := os.Stat("training-data"); err == nil {
-		cmd := exec.Command("./zpo", "train", "--auto-discover", "training-data", "--config", configPath, "--quiet", "--reset")
+		cmd := exec.Command("./zpam", "train", "--auto-discover", "training-data", "--config", configPath, "--quiet", "--reset")
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("    ⚠️  Training failed: %v\n", err)
 		} else {
@@ -229,14 +229,14 @@ func generateQuickstartConfig(caps *SystemCapabilities) *config.Config {
 		cfg.Learning.Enabled = true
 		cfg.Learning.Backend = "redis"
 		cfg.Learning.Redis.RedisURL = caps.RedisURL
-		cfg.Learning.Redis.KeyPrefix = "zpo:quickstart"
+		cfg.Learning.Redis.KeyPrefix = "zpam:quickstart"
 		cfg.Learning.Redis.MinLearns = 5 // Lower threshold for testing
 		fmt.Printf("  🧠 Configured Redis Bayesian learning (high performance)\n")
 	} else {
 		// Use file backend as fallback
 		cfg.Learning.Enabled = true
 		cfg.Learning.Backend = "file"
-		cfg.Learning.File.ModelPath = "zpo-quickstart-model.json"
+		cfg.Learning.File.ModelPath = "zpam-quickstart-model.json"
 		fmt.Printf("  📁 Configured file-based learning (fallback mode)\n")
 	}
 
@@ -313,24 +313,24 @@ func runSampleTests(cfg *config.Config) error {
 
 func printNextSteps(configPath string, caps *SystemCapabilities) {
 	fmt.Printf("════════════════════════════════════════════════\n")
-	fmt.Printf("🎉 ZPO is now configured and ready!\n\n")
+	fmt.Printf("🎉 ZPAM is now configured and ready!\n\n")
 
 	fmt.Printf("📝 Quick Commands to Try:\n")
 	fmt.Printf("  # Test a single email\n")
-	fmt.Printf("  ./zpo test examples/clean_email.eml --config %s\n\n", configPath)
+	fmt.Printf("  ./zpam test examples/clean_email.eml --config %s\n\n", configPath)
 
 	fmt.Printf("  # Filter a directory of emails\n")
-	fmt.Printf("  ./zpo filter --input your-emails/ --config %s\n\n", configPath)
+	fmt.Printf("  ./zpam filter --input your-emails/ --config %s\n\n", configPath)
 
 	if caps.HasSamples {
 		fmt.Printf("  # Train with your sample emails\n")
-		fmt.Printf("  ./zpo train --spam-dir spam/ --ham-dir ham/ --config %s\n\n", configPath)
+		fmt.Printf("  ./zpam train --spam-dir spam/ --ham-dir ham/ --config %s\n\n", configPath)
 	}
 
 	if caps.HasRedis {
 		fmt.Printf("🧠 Redis Learning Enabled:\n")
 		fmt.Printf("  - Your model will persist across restarts\n")
-		fmt.Printf("  - Multiple ZPO instances can share learning\n")
+		fmt.Printf("  - Multiple ZPAM instances can share learning\n")
 		fmt.Printf("  - Performance optimized for high volume\n\n")
 	}
 
@@ -354,7 +354,7 @@ func printNextSteps(configPath string, caps *SystemCapabilities) {
 	fmt.Printf("  - Check testing/README.md for troubleshooting\n")
 	fmt.Printf("  - Visit the project documentation\n\n")
 
-	fmt.Printf("🫏 Happy spam filtering! ZPO is ready to work like a reliable donkey.\n")
+	fmt.Printf("🫏 Happy spam filtering! ZPAM is ready to work like a reliable donkey.\n")
 }
 
 // Helper functions

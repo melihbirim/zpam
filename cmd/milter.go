@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/milter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/milter"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 var milterCmd = &cobra.Command{
 	Use:   "milter",
 	Short: "Start milter server for Postfix/Sendmail integration",
-	Long: `Start ZPO milter server to integrate with Postfix or Sendmail MTA.
+	Long: `Start ZPAM milter server to integrate with Postfix or Sendmail MTA.
 
 The milter server listens on a socket (TCP or Unix) and processes incoming
 emails in real-time as they are received by the MTA. This provides immediate
@@ -32,16 +32,16 @@ spam filtering without storing emails to disk.
 
 Example usage:
   # Start milter server with default config
-  zpo milter
+  zpam milter
 
   # Start milter server with custom config
-  zpo milter --config /etc/zpo/milter.yaml
+  zpam milter --config /etc/zpam/milter.yaml
 
   # Start milter server on custom address
-  zpo milter --network tcp --address 127.0.0.1:7357
+  zpam milter --network tcp --address 127.0.0.1:7357
 
   # Start milter server with debug logging
-  zpo milter --debug
+  zpam milter --debug
 
 For Postfix integration, add to main.cf:
   smtpd_milters = inet:127.0.0.1:7357
@@ -97,7 +97,7 @@ For Postfix integration, add to main.cf:
 		// Start server in goroutine
 		serverErr := make(chan error, 1)
 		go func() {
-			fmt.Printf("🫏 ZPO Milter Server starting on %s://%s\n",
+			fmt.Printf("🫏 ZPAM Milter Server starting on %s://%s\n",
 				cfg.Milter.Network, cfg.Milter.Address)
 			fmt.Printf("📧 Ready to filter emails via milter protocol\n")
 			fmt.Printf("⚡ Performance: max %d concurrent connections, %dms timeouts\n",
@@ -153,7 +153,7 @@ For Postfix integration, add to main.cf:
 func init() {
 	milterCmd.Flags().StringVarP(&milterConfigFile, "config", "c", "config.yaml", "Configuration file path")
 	milterCmd.Flags().StringVarP(&milterNetwork, "network", "n", "", "Network type (tcp or unix)")
-	milterCmd.Flags().StringVarP(&milterAddress, "address", "a", "", "Bind address (e.g., 127.0.0.1:7357 or /tmp/zpo.sock)")
+	milterCmd.Flags().StringVarP(&milterAddress, "address", "a", "", "Bind address (e.g., 127.0.0.1:7357 or /tmp/zpam.sock)")
 	milterCmd.Flags().BoolVarP(&milterDebug, "debug", "d", false, "Enable debug logging")
 
 	rootCmd.AddCommand(milterCmd)

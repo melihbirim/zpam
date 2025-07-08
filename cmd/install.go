@@ -13,7 +13,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/config"
 )
 
 var (
@@ -28,8 +28,8 @@ var (
 
 var installCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Auto-detect system and install ZPO with optimal configuration",
-	Long: `Zero-configuration installer that gets ZPO running in under 5 minutes.
+	Short: "Auto-detect system and install ZPAM with optimal configuration",
+	Long: `Zero-configuration installer that gets ZPAM running in under 5 minutes.
 
 This command will:
 1. 🔍 Auto-detect your system capabilities (OS, Redis, Docker, etc.)
@@ -64,9 +64,9 @@ type SystemInfo struct {
 }
 
 func runInstall(cmd *cobra.Command, args []string) error {
-	fmt.Printf("🫏 ZPO Zero-Config Installer\n")
+	fmt.Printf("🫏 ZPAM Zero-Config Installer\n")
 	fmt.Printf("════════════════════════════════════════════════════════\n")
-	fmt.Printf("Getting ZPO ready for production in under 5 minutes...\n\n")
+	fmt.Printf("Getting ZPAM ready for production in under 5 minutes...\n\n")
 
 	// Step 1: System Detection
 	fmt.Printf("🔍 Step 1/6: System Detection\n")
@@ -402,12 +402,12 @@ func generateOptimalConfig(sysInfo *SystemInfo, configPath string) error {
 		fmt.Printf("  🔧 Configuring Redis backend...\n")
 		cfg.Learning.Backend = "redis"
 		cfg.Learning.Redis.RedisURL = sysInfo.RedisURL
-		cfg.Learning.Redis.KeyPrefix = "zpo:"
+		cfg.Learning.Redis.KeyPrefix = "zpam:"
 		cfg.Learning.Redis.TokenTTL = "720h" // 30 days
 	} else {
 		fmt.Printf("  🔧 Configuring file backend...\n")
 		cfg.Learning.Backend = "file"
-		cfg.Learning.File.ModelPath = "zpo-model.json"
+		cfg.Learning.File.ModelPath = "zpam-model.json"
 	}
 
 	// Configure plugins based on availability
@@ -492,7 +492,7 @@ func runInitialTraining(configPath string) error {
 	}
 
 	// Run training command
-	fmt.Printf("  🚀 Training ZPO with sample data...\n")
+	fmt.Printf("  🚀 Training ZPAM with sample data...\n")
 
 	// Use the train command we already built
 	args := []string{
@@ -506,7 +506,7 @@ func runInitialTraining(configPath string) error {
 	// Build the command path
 	execPath, err := os.Executable()
 	if err != nil {
-		execPath = "./zpo"
+		execPath = "./zpam"
 	}
 
 	cmd := exec.Command(execPath, args...)
@@ -522,7 +522,7 @@ func runInitialTraining(configPath string) error {
 }
 
 func printInstallationComplete(sysInfo *SystemInfo, configPath string) {
-	fmt.Printf("\n🎉 ZPO Installation Complete!\n")
+	fmt.Printf("\n🎉 ZPAM Installation Complete!\n")
 	fmt.Printf("════════════════════════════════════════════════════════\n")
 	fmt.Printf("✅ System detected and configured\n")
 	fmt.Printf("✅ Optimal configuration generated: %s\n", configPath)
@@ -538,33 +538,33 @@ func printInstallationComplete(sysInfo *SystemInfo, configPath string) {
 	// Test with sample data
 	fmt.Printf("# Test spam detection:\n")
 	if sysInfo.HasRedis {
-		fmt.Printf("./zpo test training-data/spam/06_spam_phishing.eml --config %s\n\n", configPath)
+		fmt.Printf("./zpam test training-data/spam/06_spam_phishing.eml --config %s\n\n", configPath)
 	} else {
-		fmt.Printf("./zpo test training-data/spam/06_spam_phishing.eml --config %s\n\n", configPath)
+		fmt.Printf("./zpam test training-data/spam/06_spam_phishing.eml --config %s\n\n", configPath)
 	}
 
 	// Monitor system
-	fmt.Printf("# Monitor ZPO status:\n")
-	fmt.Printf("./zpo status --config %s\n\n", configPath)
+	fmt.Printf("# Monitor ZPAM status:\n")
+	fmt.Printf("./zpam status --config %s\n\n", configPath)
 
 	// Train with more data
 	fmt.Printf("# Train with your email data:\n")
-	fmt.Printf("./zpo train --auto-discover /path/to/your/emails --config %s\n\n", configPath)
+	fmt.Printf("./zpam train --auto-discover /path/to/your/emails --config %s\n\n", configPath)
 
 	if sysInfo.HasPostfix {
 		fmt.Printf("# Start milter service:\n")
-		fmt.Printf("./zpo milter --config %s\n\n", configPath)
+		fmt.Printf("./zpam milter --config %s\n\n", configPath)
 	}
 
 	// Performance and monitoring
 	fmt.Printf("📊 Advanced Usage:\n")
 	fmt.Printf("─────────────────────────────────────────\n")
 	fmt.Printf("# Real-time monitoring:\n")
-	fmt.Printf("./zpo monitor --config %s\n\n", configPath)
+	fmt.Printf("./zpam monitor --config %s\n\n", configPath)
 
 	fmt.Printf("# Service management:\n")
-	fmt.Printf("./zpo start --config %s\n", configPath)
-	fmt.Printf("./zpo status --config %s\n\n", configPath)
+	fmt.Printf("./zpam start --config %s\n", configPath)
+	fmt.Printf("./zpam status --config %s\n\n", configPath)
 
 	// Next steps
 	fmt.Printf("📚 Next Steps:\n")
@@ -584,9 +584,9 @@ func printInstallationComplete(sysInfo *SystemInfo, configPath string) {
 	fmt.Printf("─────────────────────────────────────────\n")
 	fmt.Printf("• Run any command with --help for details\n")
 	fmt.Printf("• Check the documentation in docs/\n")
-	fmt.Printf("• Run './zpo quickstart' for interactive setup\n")
+	fmt.Printf("• Run './zpam quickstart' for interactive setup\n")
 
-	fmt.Printf("\n🫏 ZPO is ready! Time to detection: < 5ms per email\n")
+	fmt.Printf("\n🫏 ZPAM is ready! Time to detection: < 5ms per email\n")
 }
 
 // Helper functions

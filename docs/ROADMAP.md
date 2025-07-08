@@ -1,4 +1,4 @@
-# ZPO Development Roadmap
+# ZPAM Development Roadmap
 
 > **Vision:** "Make spam detection as simple as `npm install` but as powerful as enterprise security suites."
 
@@ -30,11 +30,11 @@
 
 ```bash
 # This should "just work" out of the box - AND IT DOES!
-./zpo install        # ✅ Auto-detects system, installs deps, creates config
-./zpo start          # ✅ Starts with sane defaults  
-./zpo status         # ✅ Shows comprehensive health dashboard
-./zpo quickstart     # ✅ Interactive setup wizard with demo mode
-./zpo monitor        # ✅ Real-time monitoring dashboard
+./zpam install        # ✅ Auto-detects system, installs deps, creates config
+./zpam start          # ✅ Starts with sane defaults  
+./zpam status         # ✅ Shows comprehensive health dashboard
+./zpam quickstart     # ✅ Interactive setup wizard with demo mode
+./zpam monitor        # ✅ Real-time monitoring dashboard
 ```
 
 **✅ Implemented Features:**
@@ -57,10 +57,10 @@
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo plugins discover                    # Show available plugins
-./zpo plugins install spamassassin       # One-command install
-./zpo plugins install custom --from-url  # Install from GitHub
-./zpo plugins search "phishing"          # Search plugins by keyword
+./zpam plugins discover                    # Show available plugins
+./zpam plugins install spamassassin       # One-command install
+./zpam plugins install custom --from-url  # Install from GitHub
+./zpam plugins search "phishing"          # Search plugins by keyword
 ```
 
 **Requirements:**
@@ -79,9 +79,9 @@
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo config web      # Opens web UI for configuration
-./zpo config validate # Validates config with helpful errors
-./zpo config export   # Export configuration for sharing
+./zpam config web      # Opens web UI for configuration
+./zpam config validate # Validates config with helpful errors
+./zpam config export   # Export configuration for sharing
 ```
 
 **Requirements:**
@@ -92,7 +92,7 @@
 - Configuration change preview
 
 **Success Criteria:**
-- Non-technical users can configure ZPO visually
+- Non-technical users can configure ZPAM visually
 - Configuration errors are clear and actionable
 - Web UI works on mobile devices
 
@@ -101,14 +101,14 @@
 
 ```bash
 # Full-featured training system with smart automation
-./zpo train --auto-discover ~/Mail/             # ✅ Auto-find training data
-./zpo train --spam-dir spam/ --ham-dir clean/   # ✅ Traditional training
-./zpo train --mbox-file archive.mbox --interactive # ✅ Mbox support
-./zpo train --validate-only                     # ✅ Check training data quality
-./zpo train --benchmark                         # ✅ Test accuracy improvements
-./zpo train --resume                            # ✅ Continue interrupted training
-./zpo train --optimize                          # ✅ Auto-optimize training sets
-./zpo train --advanced                          # ✅ Advanced training modes
+./zpam train --auto-discover ~/Mail/             # ✅ Auto-find training data
+./zpam train --spam-dir spam/ --ham-dir clean/   # ✅ Traditional training
+./zpam train --mbox-file archive.mbox --interactive # ✅ Mbox support
+./zpam train --validate-only                     # ✅ Check training data quality
+./zpam train --benchmark                         # ✅ Test accuracy improvements
+./zpam train --resume                            # ✅ Continue interrupted training
+./zpam train --optimize                          # ✅ Auto-optimize training sets
+./zpam train --advanced                          # ✅ Advanced training modes
 ```
 
 **✅ Implemented Features:**
@@ -140,10 +140,10 @@
 **Status:** 🟡 Partially Complete (basic testing exists)
 
 ```bash
-./zpo generate plugin my_plugin --with-tests --with-examples
-./zpo test plugin my_plugin --benchmark --coverage
-./zpo test plugin my_plugin --integration
-./zpo publish plugin my_plugin --to registry
+./zpam generate plugin my_plugin --with-tests --with-examples
+./zpam test plugin my_plugin --benchmark --coverage
+./zpam test plugin my_plugin --integration
+./zpam publish plugin my_plugin --to registry
 ```
 
 **Requirements:**
@@ -162,10 +162,10 @@
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo dev                         # Development mode with hot reload
-./zpo debug plugin my_plugin      # Step-through debugging  
-./zpo profile --plugin custom_rules # Performance profiling
-./zpo logs --plugin my_plugin --live # Live plugin logging
+./zpam dev                         # Development mode with hot reload
+./zpam debug plugin my_plugin      # Step-through debugging  
+./zpam profile --plugin custom_rules # Performance profiling
+./zpam logs --plugin my_plugin --live # Live plugin logging
 ```
 
 **Requirements:**
@@ -212,9 +212,9 @@ func (p *SimpleContentPlugin) CheckEmail(email Email) (score float64, reason str
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo ecosystem stats           # Show ecosystem health
-./zpo ecosystem validate        # Validate plugin quality
-./zpo ecosystem dependencies    # Show plugin dependency graph
+./zpam ecosystem stats           # Show ecosystem health
+./zpam ecosystem validate        # Validate plugin quality
+./zpam ecosystem dependencies    # Show plugin dependency graph
 ```
 
 **Requirements:**
@@ -233,10 +233,10 @@ func (p *SimpleContentPlugin) CheckEmail(email Email) (score float64, reason str
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo metrics          # Prometheus metrics endpoint
-./zpo health           # Health check endpoint  
-./zpo logs --follow    # Structured logging
-./zpo trace            # Distributed tracing
+./zpam metrics          # Prometheus metrics endpoint
+./zpam health           # Health check endpoint  
+./zpam logs --follow    # Structured logging
+./zpam trace            # Distributed tracing
 ```
 
 **Requirements:**
@@ -255,7 +255,7 @@ func (p *SimpleContentPlugin) CheckEmail(email Email) (score float64, reason str
 **Status:** 🔴 Not Started
 
 ```yaml
-# zpo-cluster.yaml - simple cluster config
+# zpam-cluster.yaml - simple cluster config
 replicas: 3
 load_balancer: true
 auto_scale:
@@ -280,9 +280,9 @@ auto_scale:
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo security scan                    # Scan for vulnerabilities
-./zpo plugins sandbox my_external_api  # Run untrusted plugins safely
-./zpo security audit                   # Security audit report
+./zpam security scan                    # Scan for vulnerabilities
+./zpam plugins sandbox my_external_api  # Run untrusted plugins safely
+./zpam security audit                   # Security audit report
 ```
 
 **Requirements:**
@@ -301,9 +301,9 @@ auto_scale:
 **Status:** 🟡 Partially Complete (basic parallelism exists)
 
 ```bash
-./zpo optimize           # Auto-tune performance settings
-./zpo benchmark --suite  # Comprehensive benchmarking
-./zpo cache warmup       # Warm up caches for optimal performance
+./zpam optimize           # Auto-tune performance settings
+./zpam benchmark --suite  # Comprehensive benchmarking
+./zpam cache warmup       # Warm up caches for optimal performance
 ```
 
 **Requirements:**
@@ -327,10 +327,10 @@ auto_scale:
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo registry search "phishing detection"
-./zpo registry install popular/anti-phishing
-./zpo registry publish my-awesome-plugin --license MIT
-./zpo registry stats my-plugin
+./zpam registry search "phishing detection"
+./zpam registry install popular/anti-phishing
+./zpam registry publish my-awesome-plugin --license MIT
+./zpam registry stats my-plugin
 ```
 
 **Requirements:**
@@ -350,10 +350,10 @@ auto_scale:
 
 ```bash
 # Enterprise-ready integrations
-./zpo integrations enable office365
-./zpo integrations enable google-workspace
-./zpo integrations enable slack-alerts
-./zpo integrations enable splunk
+./zpam integrations enable office365
+./zpam integrations enable google-workspace
+./zpam integrations enable slack-alerts
+./zpam integrations enable splunk
 ```
 
 **Requirements:**
@@ -372,10 +372,10 @@ auto_scale:
 **Status:** 🔴 Not Started
 
 ```bash
-./zpo models discover                    # Browse pre-trained models
-./zpo models install financial-spam-v2   # Industry-specific models
-./zpo models train --dataset my-data     # Auto-train custom models
-./zpo models benchmark                   # Compare model performance
+./zpam models discover                    # Browse pre-trained models
+./zpam models install financial-spam-v2   # Industry-specific models
+./zpam models train --dataset my-data     # Auto-train custom models
+./zpam models benchmark                   # Compare model performance
 ```
 
 **Requirements:**
@@ -394,9 +394,9 @@ auto_scale:
 **Status:** 🟡 Partially Complete (basic docs exist)
 
 ```bash
-./zpo docs generate     # Generate comprehensive documentation
-./zpo examples create   # Create example configurations
-./zpo community stats   # Show community health metrics
+./zpam docs generate     # Generate comprehensive documentation
+./zpam examples create   # Create example configurations
+./zpam community stats   # Show community health metrics
 ```
 
 **Requirements:**
@@ -420,14 +420,14 @@ auto_scale:
 ### Perfect User Journey:
 ```bash
 # The ideal experience
-curl -sSL install.zpo.dev | bash     # Install ZPO
-zpo quickstart                        # Interactive setup wizard
-zpo test examples/spam.eml            # Test with sample email
+curl -sSL install.zpam.dev | bash     # Install ZPAM
+zpam quickstart                        # Interactive setup wizard
+zpam test examples/spam.eml            # Test with sample email
 # Output: "✅ SPAM detected (Score: 89.2, Confidence: 92%)"
 ```
 
 ### Implementation Priority:
-1. **Week 1:** `zpo quickstart` command with auto-detection
+1. **Week 1:** `zpam quickstart` command with auto-detection
 2. **Week 2:** Web installer and configuration UI
 3. **Week 3:** Plugin marketplace integration
 4. **Week 4:** Performance optimization and polish

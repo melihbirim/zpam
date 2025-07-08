@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/config"
 )
 
 var (
@@ -29,10 +29,10 @@ var (
 var serviceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "Service management (start, stop, restart, reload)",
-	Long: `Manage ZPO service lifecycle with commands:
-- start: Start ZPO service in background
-- stop: Gracefully stop running ZPO service  
-- restart: Stop and start ZPO service
+	Long: `Manage ZPAM service lifecycle with commands:
+- start: Start ZPAM service in background
+- stop: Gracefully stop running ZPAM service  
+- restart: Stop and start ZPAM service
 - reload: Reload configuration without restart
 
 Supports both milter mode (Postfix integration) and standalone mode.`,
@@ -40,8 +40,8 @@ Supports both milter mode (Postfix integration) and standalone mode.`,
 
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start ZPO service",
-	Long: `Start ZPO service in the background.
+	Short: "Start ZPAM service",
+	Long: `Start ZPAM service in the background.
 
 Modes:
 - milter: Run as milter for Postfix/Sendmail integration
@@ -53,8 +53,8 @@ The service will be started as a daemon unless --no-daemon is specified.`,
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stop ZPO service",
-	Long: `Gracefully stop the running ZPO service.
+	Short: "Stop ZPAM service",
+	Long: `Gracefully stop the running ZPAM service.
 
 Uses SIGTERM for graceful shutdown, with optional --force flag for SIGKILL.
 Automatically removes PID files and cleans up resources.`,
@@ -63,18 +63,18 @@ Automatically removes PID files and cleans up resources.`,
 
 var restartCmd = &cobra.Command{
 	Use:   "restart",
-	Short: "Restart ZPO service",
-	Long: `Stop and start ZPO service.
+	Short: "Restart ZPAM service",
+	Long: `Stop and start ZPAM service.
 
 Performs graceful shutdown followed by startup with configuration validation.
-Equivalent to running 'zpo stop' followed by 'zpo start'.`,
+Equivalent to running 'zpam stop' followed by 'zpam start'.`,
 	RunE: runRestart,
 }
 
 var reloadCmd = &cobra.Command{
 	Use:   "reload",
-	Short: "Reload ZPO configuration",
-	Long: `Reload ZPO configuration without restarting the service.
+	Short: "Reload ZPAM configuration",
+	Long: `Reload ZPAM configuration without restarting the service.
 
 Sends SIGHUP to the running process to reload configuration files.
 Faster than restart and maintains existing connections.`,
@@ -85,13 +85,13 @@ Faster than restart and maintains existing connections.`,
 
 func runStart(cmd *cobra.Command, args []string) error {
 	if !serviceQuiet {
-		fmt.Printf("🫏 Starting ZPO service...\n")
+		fmt.Printf("🫏 Starting ZPAM service...\n")
 	}
 
 	// Check if already running
 	if isServiceRunning() {
 		pid, _ := getServicePID()
-		return fmt.Errorf("ZPO service is already running (PID: %d)", pid)
+		return fmt.Errorf("ZPAM service is already running (PID: %d)", pid)
 	}
 
 	// Validate configuration
@@ -123,8 +123,8 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 
 	if !serviceQuiet {
-		fmt.Printf("✅ ZPO service started successfully (PID: %d)\n", pid)
-		fmt.Printf("📊 Check status: ./zpo status\n")
+		fmt.Printf("✅ ZPAM service started successfully (PID: %d)\n", pid)
+		fmt.Printf("📊 Check status: ./zpam status\n")
 		fmt.Printf("📜 View logs: tail -f %s\n", getLogFile())
 	}
 
@@ -133,13 +133,13 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 func runStop(cmd *cobra.Command, args []string) error {
 	if !serviceQuiet {
-		fmt.Printf("🫏 Stopping ZPO service...\n")
+		fmt.Printf("🫏 Stopping ZPAM service...\n")
 	}
 
 	// Check if running
 	if !isServiceRunning() {
 		if !serviceQuiet {
-			fmt.Printf("ℹ️  ZPO service is not running\n")
+			fmt.Printf("ℹ️  ZPAM service is not running\n")
 		}
 		return nil
 	}
@@ -155,7 +155,7 @@ func runStop(cmd *cobra.Command, args []string) error {
 	}
 
 	if !serviceQuiet {
-		fmt.Printf("✅ ZPO service stopped successfully\n")
+		fmt.Printf("✅ ZPAM service stopped successfully\n")
 	}
 
 	return nil
@@ -163,7 +163,7 @@ func runStop(cmd *cobra.Command, args []string) error {
 
 func runRestart(cmd *cobra.Command, args []string) error {
 	if !serviceQuiet {
-		fmt.Printf("🫏 Restarting ZPO service...\n")
+		fmt.Printf("🫏 Restarting ZPAM service...\n")
 	}
 
 	// Stop if running
@@ -181,12 +181,12 @@ func runRestart(cmd *cobra.Command, args []string) error {
 
 func runReload(cmd *cobra.Command, args []string) error {
 	if !serviceQuiet {
-		fmt.Printf("🫏 Reloading ZPO configuration...\n")
+		fmt.Printf("🫏 Reloading ZPAM configuration...\n")
 	}
 
 	// Check if running
 	if !isServiceRunning() {
-		return fmt.Errorf("ZPO service is not running")
+		return fmt.Errorf("ZPAM service is not running")
 	}
 
 	pid, err := getServicePID()
@@ -224,7 +224,7 @@ func isServiceRunning() bool {
 		return false
 	}
 
-	// Check if process exists and is actually ZPO
+	// Check if process exists and is actually ZPAM
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		cleanupPIDFile()
@@ -320,7 +320,7 @@ func startService(cfg *config.Config) (int, error) {
 
 		go func() {
 			<-sigChan
-			fmt.Printf("\n🛑 Shutting down ZPO service...\n")
+			fmt.Printf("\n🛑 Shutting down ZPAM service...\n")
 			cmd.Process.Signal(syscall.SIGTERM)
 		}()
 
@@ -447,14 +447,14 @@ func getPIDFile() string {
 	if servicePidFile != "" {
 		return servicePidFile
 	}
-	return fmt.Sprintf("zpo-%s.pid", serviceMode)
+	return fmt.Sprintf("zpam-%s.pid", serviceMode)
 }
 
 func getLogFile() string {
 	if serviceLogFile != "" {
 		return serviceLogFile
 	}
-	return fmt.Sprintf("logs/zpo-%s.log", serviceMode)
+	return fmt.Sprintf("logs/zpam-%s.log", serviceMode)
 }
 
 func writePIDFile(pid int) error {

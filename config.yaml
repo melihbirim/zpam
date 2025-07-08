@@ -95,7 +95,7 @@ logging:
     max_backups: 3
 learning:
     enabled: true
-    model_path: zpo-model.json
+    model_path: zpam-model.json
     min_word_length: 3
     max_word_length: 20
     case_sensitive: false
@@ -149,7 +149,7 @@ milter:
     reject_message: ""
     quarantine_message: ""
     add_spam_headers: true
-    spam_header_prefix: X-ZPO-
+    spam_header_prefix: X-ZPAM-
 plugins:
     enabled: true
     timeout_ms: 5000

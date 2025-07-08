@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 )
 
 // VirusTotalPlugin integrates with VirusTotal API for threat intelligence

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 	"gopkg.in/yaml.v3"
 )
 
@@ -165,7 +165,7 @@ func (cr *CustomRulesPlugin) loadRuleSet(setName string, ruleIDs []string, allRu
 
 // createDefaultRulesFile creates a basic default rules file if none exists
 func (cr *CustomRulesPlugin) createDefaultRulesFile() error {
-	defaultConfig := `# ZPO Custom Rules Configuration
+	defaultConfig := `# ZPAM Custom Rules Configuration
 # This file defines custom spam detection rules
 # Edit this file to add your own rules
 

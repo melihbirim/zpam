@@ -1,6 +1,6 @@
 # Testing Documentation
 
-This directory contains comprehensive testing scripts and benchmarks for ZPO spam filter.
+This directory contains comprehensive testing scripts and benchmarks for ZPAM spam filter.
 
 ## 🚀 Quick Testing
 
@@ -38,11 +38,11 @@ Completed in 1.68 seconds
 Average: 816 emails/second (1.68ms per email)
 ```
 
-### `benchmark_zpo.sh`
+### `benchmark_zpam.sh`
 **Purpose:** Comprehensive benchmark suite with multiple configurations
 **Usage:**
 ```bash
-./testing/benchmark_zpo.sh [config_file]
+./testing/benchmark_zpam.sh [config_file]
 ```
 
 **Features:**
@@ -149,7 +149,7 @@ export REDIS_URL="redis://localhost:6379"
 export TEST_EMAIL_COUNT=1000
 
 # Optional: Enable verbose output
-export ZPO_TEST_VERBOSE=1
+export ZPAM_TEST_VERBOSE=1
 ```
 
 ## 🐛 Troubleshooting
@@ -177,7 +177,7 @@ chmod +x testing/*.sh
 ./testing/benchmark_simple.sh 100
 
 # Monitor memory usage
-./testing/benchmark_zpo.sh --memory-profile
+./testing/benchmark_zpam.sh --memory-profile
 ```
 
 ### Test Dependencies
@@ -271,7 +271,7 @@ main "$@"
 ### GitHub Actions Integration
 ```yaml
 # Example CI test step
-- name: Run ZPO Tests
+- name: Run ZPAM Tests
   run: |
     ./testing/test_redis_bayes.sh unit
     ./testing/benchmark_simple.sh 100

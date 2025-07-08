@@ -11,7 +11,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/config"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show ZPO system health and operational status",
+	Short: "Show ZPAM system health and operational status",
 	Long: `Display comprehensive system status including:
 - Service status and uptime
 - Performance metrics and statistics  
@@ -30,7 +30,7 @@ var statusCmd = &cobra.Command{
 - Dependency availability
 - Health recommendations
 
-Perfect for monitoring ZPO health and troubleshooting issues.`,
+Perfect for monitoring ZPAM health and troubleshooting issues.`,
 	RunE: runStatus,
 }
 
@@ -53,7 +53,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 }
 
 func runStatusWatch() error {
-	fmt.Printf("🫏 ZPO Live Status Monitor (Press Ctrl+C to exit)\n")
+	fmt.Printf("🫏 ZPAM Live Status Monitor (Press Ctrl+C to exit)\n")
 	fmt.Printf("═══════════════════════════════════════════════════\n\n")
 
 	for {
@@ -163,7 +163,7 @@ func collectSystemStatus() (*SystemStatus, error) {
 }
 
 func collectServiceStatus() ServiceStatus {
-	// Check if ZPO is running by looking for PID file or process
+	// Check if ZPAM is running by looking for PID file or process
 	configFile := statusConfig
 	if configFile == "" {
 		// Try to find config file
@@ -183,7 +183,7 @@ func collectServiceStatus() ServiceStatus {
 
 	// Try milter mode first (default), then standalone
 	for _, mode := range []string{"milter", "standalone"} {
-		pidFile := fmt.Sprintf("zpo-%s.pid", mode)
+		pidFile := fmt.Sprintf("zpam-%s.pid", mode)
 		if data, err := os.ReadFile(pidFile); err == nil {
 			if pidVal, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil {
 				// Check if process exists
@@ -215,7 +215,7 @@ func collectServiceStatus() ServiceStatus {
 }
 
 func collectPerformanceStatus() PerformanceStatus {
-	// This would normally come from metrics stored by running ZPO instance
+	// This would normally come from metrics stored by running ZPAM instance
 	// For now, return mock data to show the concept
 	return PerformanceStatus{
 		EmailsProcessed:    0,
@@ -327,7 +327,7 @@ func collectFileLearningStatus(cfg *config.Config) (LearningStatus, error) {
 	// Check if model file exists
 	modelPath := cfg.Learning.File.ModelPath
 	if modelPath == "" {
-		modelPath = "zpo-model.json"
+		modelPath = "zpam-model.json"
 	}
 
 	if info, err := os.Stat(modelPath); err == nil {
@@ -438,8 +438,8 @@ func assessHealth(status *SystemStatus) HealthStatus {
 
 	// Check service status
 	if !status.Service.Running {
-		health.Issues = append(health.Issues, "ZPO service is not running")
-		health.Recommendations = append(health.Recommendations, "Start ZPO with: ./zpo start")
+		health.Issues = append(health.Issues, "ZPAM service is not running")
+		health.Recommendations = append(health.Recommendations, "Start ZPAM with: ./zpam start")
 	}
 
 	// Check learning status
@@ -453,11 +453,11 @@ func assessHealth(status *SystemStatus) HealthStatus {
 	// Check training data
 	if status.Learning.SpamLearned < 100 {
 		health.Warnings = append(health.Warnings, "Low spam training data (< 100 samples)")
-		health.Recommendations = append(health.Recommendations, "Train with more spam emails: ./zpo train --spam-dir spam/")
+		health.Recommendations = append(health.Recommendations, "Train with more spam emails: ./zpam train --spam-dir spam/")
 	}
 	if status.Learning.HamLearned < 100 {
 		health.Warnings = append(health.Warnings, "Low ham training data (< 100 samples)")
-		health.Recommendations = append(health.Recommendations, "Train with more clean emails: ./zpo train --ham-dir ham/")
+		health.Recommendations = append(health.Recommendations, "Train with more clean emails: ./zpam train --ham-dir ham/")
 	}
 
 	// Check dependencies
@@ -479,7 +479,7 @@ func assessHealth(status *SystemStatus) HealthStatus {
 }
 
 func printStatusDashboard(status *SystemStatus) {
-	fmt.Printf("🫏 ZPO System Status Dashboard\n")
+	fmt.Printf("🫏 ZPAM System Status Dashboard\n")
 	fmt.Printf("═══════════════════════════════════════\n\n")
 
 	// Service Status

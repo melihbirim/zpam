@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zpo/spam-filter/cmd"
+	"github.com/zpam/spam-filter/cmd"
 )
 
 func main() {
@@ -12,4 +12,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-} 
+}

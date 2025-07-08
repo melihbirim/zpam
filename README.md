@@ -1,11 +1,11 @@
-# ZPO - Lightning-Fast Spam Filter 🫏
+# ZPAM - Lightning-Fast Spam Filter 🫏
 
 [![Go](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Speed](https://img.shields.io/badge/Speed-%3C5ms_per_email-brightgreen.svg)](#performance)
 [![Setup](https://img.shields.io/badge/Setup-%3C5_minutes-orange.svg)](#quick-start)
 
-ZPO is a **zero-configuration spam filter** that gets you detecting spam in under 5 minutes. Named after a baby donkey - it's **free, fast, and reliable**.
+ZPAM is a **zero-configuration spam filter** that gets you detecting spam in under 5 minutes. Named after a baby donkey - it's **free, fast, and reliable**.
 
 > **🎯 Mission**: Make spam detection as simple as `npm install` but as powerful as enterprise security suites.
 
@@ -14,24 +14,24 @@ ZPO is a **zero-configuration spam filter** that gets you detecting spam in unde
 ### **Option 1: Zero-Config Install (Recommended)**
 ```bash
 # One command sets up everything automatically
-./zpo install
+./zpam install
 
 # Test immediately with provided samples
-./zpo test training-data/spam/06_spam_phishing.eml
+./zpam test training-data/spam/06_spam_phishing.eml
 
 # Start real-time monitoring
-./zpo monitor
+./zpam monitor
 ```
 
 ### **Option 2: Interactive Setup**
 ```bash
 # Interactive wizard with guided configuration
-./zpo quickstart
+./zpam quickstart
 
 # Follow the prompts to customize your setup
 ```
 
-**That's it!** ZPO automatically:
+**That's it!** ZPAM automatically:
 - 🔍 Detects your system capabilities (Redis, Docker, etc.)
 - ⚙️ Generates optimal configuration
 - 🧠 Sets up learning backend (Redis or file-based)
@@ -68,20 +68,20 @@ ZPO is a **zero-configuration spam filter** that gets you detecting spam in unde
 
 ```bash
 # Real-time system dashboard
-./zpo status
+./zpam status
 
 # Live monitoring with charts
-./zpo monitor
+./zpam monitor
 
 # Service management
-./zpo start
-./zpo stop
-./zpo restart
+./zpam start
+./zpam stop
+./zpam restart
 ```
 
 **Example Status Output:**
 ```
-🫏 ZPO System Status Dashboard
+🫏 ZPAM System Status Dashboard
 ═══════════════════════════════════════
 
 🚀 Service Status
@@ -104,7 +104,7 @@ ZPO is a **zero-configuration spam filter** that gets you detecting spam in unde
 
 ## 🎯 **Email Classification**
 
-ZPO uses an intuitive 1-5 scoring system:
+ZPAM uses an intuitive 1-5 scoring system:
 
 | Score | Classification | Action | Description |
 |-------|---------------|--------|-------------|
@@ -115,33 +115,33 @@ ZPO uses an intuitive 1-5 scoring system:
 ### **Real Example Results**
 ```bash
 # Business email
-./zpo test training-data/ham/01_clean_business.eml
+./zpam test training-data/ham/01_clean_business.eml
 # → Score: 1/5 ✅ HAM
 
 # Phishing attempt  
-./zpo test training-data/spam/06_spam_phishing.eml
+./zpam test training-data/spam/06_spam_phishing.eml
 # → Score: 5/5 🚫 SPAM
 ```
 
 ## 🧠 **Enhanced Training System**
 
-Train ZPO with your email data using our advanced training system:
+Train ZPAM with your email data using our advanced training system:
 
 ```bash
 # Auto-discover and train from directory structure
-./zpo train --auto-discover /path/to/emails
+./zpam train --auto-discover /path/to/emails
 
 # Traditional spam/ham training
-./zpo train --spam-dir spam/ --ham-dir clean/
+./zpam train --spam-dir spam/ --ham-dir clean/
 
 # Interactive training with data preview
-./zpo train --spam-dir spam/ --ham-dir clean/ --interactive
+./zpam train --spam-dir spam/ --ham-dir clean/ --interactive
 
 # Benchmark accuracy improvements
-./zpo train --spam-dir spam/ --ham-dir clean/ --benchmark
+./zpam train --spam-dir spam/ --ham-dir clean/ --benchmark
 
 # Resume interrupted training
-./zpo train --resume
+./zpam train --resume
 ```
 
 **Advanced Features:**
@@ -153,7 +153,7 @@ Train ZPO with your email data using our advanced training system:
 
 ## 🔧 **Configuration Made Simple**
 
-ZPO automatically generates optimal configuration, but you can customize:
+ZPAM automatically generates optimal configuration, but you can customize:
 
 ```yaml
 # Auto-generated config-quickstart.yaml
@@ -180,42 +180,42 @@ milter:
 
 ## 🎛️ **Service Management**
 
-ZPO includes full service lifecycle management:
+ZPAM includes full service lifecycle management:
 
 ```bash
-# Start ZPO service
-./zpo start --mode milter  # For Postfix integration
-./zpo start --mode standalone  # For testing
+# Start ZPAM service
+./zpam start --mode milter  # For Postfix integration
+./zpam start --mode standalone  # For testing
 
 # Check service status
-./zpo status
+./zpam status
 
 # Restart with new configuration
-./zpo restart
+./zpam restart
 
 # Reload configuration without restart
-./zpo reload
+./zpam reload
 
 # Stop service gracefully
-./zpo stop
+./zpam stop
 ```
 
 ## 📊 **Real-Time Monitoring**
 
-Monitor ZPO performance with live dashboards:
+Monitor ZPAM performance with live dashboards:
 
 ```bash
 # Live monitoring dashboard
-./zpo monitor
+./zpam monitor
 
 # Compact view
-./zpo monitor --compact
+./zpam monitor --compact
 
 # Include live logs
-./zpo monitor --logs
+./zpam monitor --logs
 
 # Custom refresh interval
-./zpo monitor --interval 1s
+./zpam monitor --interval 1s
 ```
 
 **Monitoring Features:**
@@ -226,21 +226,21 @@ Monitor ZPO performance with live dashboards:
 
 ## 🔌 **Plugin System**
 
-Extend ZPO with powerful plugins:
+Extend ZPAM with powerful plugins:
 
 ```bash
 # List available plugins
-./zpo plugins list
+./zpam plugins list
 
 # Test specific plugin
-./zpo plugins test-one spamassassin email.eml
+./zpam plugins test-one spamassassin email.eml
 
 # Enable/disable plugins
-./zpo plugins enable spamassassin
-./zpo plugins disable rspamd
+./zpam plugins enable spamassassin
+./zpam plugins disable rspamd
 
 # View plugin statistics
-./zpo plugins stats
+./zpam plugins stats
 ```
 
 **Available Plugins:**
@@ -255,8 +255,8 @@ Extend ZPO with powerful plugins:
 Real-time email filtering for mail servers:
 
 ```bash
-# ZPO auto-configures milter if Postfix is detected
-./zpo milter --config config-quickstart.yaml
+# ZPAM auto-configures milter if Postfix is detected
+./zpam milter --config config-quickstart.yaml
 ```
 
 **Postfix Configuration:**
@@ -268,20 +268,20 @@ non_smtpd_milters = inet:localhost:7357
 
 ## 🧪 **Testing & Validation**
 
-ZPO includes comprehensive testing tools:
+ZPAM includes comprehensive testing tools:
 
 ```bash
 # Test single email
-./zpo test email.eml
+./zpam test email.eml
 
 # Validate headers (SPF/DKIM/DMARC)
-./zpo headers email.eml
+./zpam headers email.eml
 
 # Run benchmark tests
-./zpo benchmark --input test-emails/
+./zpam benchmark --input test-emails/
 
 # DNS testing tools
-./zpo dnstest demo
+./zpam dnstest demo
 ```
 
 ## 🐳 **Docker Deployment**
@@ -293,10 +293,10 @@ For containerized environments:
 docker run -d \
   -p 7357:7357 \
   -v ./config-quickstart.yaml:/app/config.yaml \
-  zpo:latest
+  zpam:latest
 
 # Or use our auto-generated Docker setup
-./zpo install --docker
+./zpam install --docker
 ```
 
 ## 📚 **Documentation**
@@ -318,7 +318,7 @@ docker run -d \
 
 ## 🤝 **Contributing**
 
-We welcome contributions! ZPO is designed to be:
+We welcome contributions! ZPAM is designed to be:
 - **Simple**: Easy to understand and modify
 - **Fast**: Performance-first architecture
 - **Reliable**: Production-ready from day one
@@ -326,8 +326,8 @@ We welcome contributions! ZPO is designed to be:
 ```bash
 # Get involved
 git clone <repository-url>
-cd zpo
-./zpo install  # Get started in minutes
+cd zpam
+./zpam install  # Get started in minutes
 ```
 
 ## 📄 **License**
@@ -336,6 +336,6 @@ MIT License - completely free for personal and commercial use.
 
 ---
 
-**🫏 ZPO: Because spam filtering should be as reliable as a donkey, and faster than you'd expect.**
+**🫏 ZPAM: Because spam filtering should be as reliable as a donkey, and faster than you'd expect.**
 
 *From zero to spam-free in under 5 minutes.* 

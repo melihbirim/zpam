@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/d--j/go-milter"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
-// Handler implements the milter.Milter interface for ZPO spam filtering
+// Handler implements the milter.Milter interface for ZPAM spam filtering
 type Handler struct {
 	milter.NoOpMilter
 	config     *config.Config
@@ -261,7 +261,7 @@ func (h *Handler) checkDomainReputation(domain string) bool {
 	return false
 }
 
-// addSpamHeaders adds X-ZPO-* headers with scan results
+// addSpamHeaders adds X-ZPAM-* headers with scan results
 func (h *Handler) addSpamHeaders(m milter.Modifier, normalizedScore int, rawScore float64) error {
 	prefix := h.config.Milter.SpamHeaderPrefix
 
@@ -286,7 +286,7 @@ func (h *Handler) addSpamHeaders(m milter.Modifier, normalizedScore int, rawScor
 
 	// Add scan info
 	scanTime := time.Since(h.startTime).Milliseconds()
-	scanInfo := fmt.Sprintf("ZPO v1.0; %.2fms", float64(scanTime))
+	scanInfo := fmt.Sprintf("ZPAM v1.0; %.2fms", float64(scanTime))
 	if err := m.AddHeader(prefix+"Info", scanInfo); err != nil {
 		return err
 	}
@@ -314,7 +314,7 @@ func (h *Handler) determineAction(normalizedScore int, rawScore float64) *milter
 	if h.config.Milter.CanQuarantine && normalizedScore >= h.config.Milter.QuarantineThreshold {
 		message := h.config.Milter.QuarantineMessage
 		if message == "" {
-			message = fmt.Sprintf("ZPO spam quarantine (score: %d/5)", normalizedScore)
+			message = fmt.Sprintf("ZPAM spam quarantine (score: %d/5)", normalizedScore)
 		}
 
 		// Note: Quarantine functionality would require implementing the quarantine action

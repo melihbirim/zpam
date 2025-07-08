@@ -1,4 +1,4 @@
-## Python Requirements for ZPO TensorFlow Integration
+## Python Requirements for ZPAM TensorFlow Integration
 ## Install with: pip install -r requirements.txt
 
 # Core machine learning

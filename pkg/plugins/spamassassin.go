@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 )
 
 // SpamAssassinPlugin integrates with SpamAssassin for enhanced spam detection

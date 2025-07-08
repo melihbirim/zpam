@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 )
 
 // PluginResult represents the result from a plugin execution

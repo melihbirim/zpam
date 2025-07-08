@@ -1,6 +1,6 @@
-# ZPO Training Data
+# ZPAM Training Data
 
-This directory contains sample email datasets for training ZPO's spam detection models. The data is organized in a structure that works seamlessly with ZPO's enhanced training system.
+This directory contains sample email datasets for training ZPAM's spam detection models. The data is organized in a structure that works seamlessly with ZPAM's enhanced training system.
 
 ## Directory Structure
 
@@ -28,47 +28,47 @@ training-data/
 - **Ham Emails**: 5 samples (business, personal, newsletter, marketing, update notifications)
 - **Balance**: 1:1 ratio (perfect for initial training)
 
-## Training with ZPO
+## Training with ZPAM
 
 ### Auto-Discovery Training
 The simplest way to train using this data:
 
 ```bash
 # Auto-discover and train on all data
-./zpo train --auto-discover training-data
+./zpam train --auto-discover training-data
 
 # Validate data quality first
-./zpo train --auto-discover training-data --validate-only
+./zpam train --auto-discover training-data --validate-only
 
 # Interactive training with preview
-./zpo train --auto-discover training-data --interactive
+./zpam train --auto-discover training-data --interactive
 ```
 
 ### Manual Directory Training
 ```bash
 # Train on specific directories
-./zpo train --spam-dir training-data/spam --ham-dir training-data/ham
+./zpam train --spam-dir training-data/spam --ham-dir training-data/ham
 
 # With progress tracking and analysis
-./zpo train --spam-dir training-data/spam --ham-dir training-data/ham --analyze
+./zpam train --spam-dir training-data/spam --ham-dir training-data/ham --analyze
 
 # Benchmark accuracy improvements
-./zpo train --spam-dir training-data/spam --ham-dir training-data/ham --benchmark
+./zpam train --spam-dir training-data/spam --ham-dir training-data/ham --benchmark
 ```
 
 ### Advanced Training Options
 ```bash
 # Reset and train fresh
-./zpo train --auto-discover training-data --reset
+./zpam train --auto-discover training-data --reset
 
 # Resume interrupted training
-./zpo train --resume
+./zpam train --resume
 
 # Limit emails for testing
-./zpo train --auto-discover training-data --max-emails 3
+./zpam train --auto-discover training-data --max-emails 3
 
 # Quiet training for scripts
-./zpo train --auto-discover training-data --quiet
+./zpam train --auto-discover training-data --quiet
 ```
 
 ## Email Format
@@ -97,7 +97,7 @@ After training with this sample data, you should see:
 - **Error Rate**: 0% (all samples parse correctly)
 - **Model Size**: ~500-1000 tokens learned
 
-## Integration with ZPO Components
+## Integration with ZPAM Components
 
 This training data integrates with:
 - **Status Command**: Shows training data counts and quality
@@ -117,16 +117,16 @@ This training data integrates with:
 
 ```bash
 # Check if training improved the model
-./zpo status
+./zpam status
 
 # Monitor training effectiveness
-./zpo monitor
+./zpam monitor
 
 # Test spam detection on sample
-./zpo filter < training-data/spam/06_spam_phishing.eml
+./zpam filter < training-data/spam/06_spam_phishing.eml
 
 # Test ham detection on sample
-./zpo filter < training-data/ham/01_clean_business.eml
+./zpam filter < training-data/ham/01_clean_business.eml
 ```
 
-Perfect for getting ZPO from 0% to 90%+ accuracy in seconds! 🫏⚡ 
+Perfect for getting ZPAM from 0% to 90%+ accuracy in seconds! 🫏⚡ 
