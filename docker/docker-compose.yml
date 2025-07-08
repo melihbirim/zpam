@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: zpo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zpo-network
+
+  zpo:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "7357-7360:7357"
+    volumes:
+      - ../config-redis.yaml:/app/config.yaml:ro
+      - ../custom_rules.yml:/app/custom_rules.yml:ro
+      - ../../zpo-test-data:/app/test-data:ro
+      - ../../zpo-test-data/stress-test:/app/stress-test:ro
+      - zpo_data:/app/data
+      - zpo_logs:/app/logs
+      - zpo_models:/app/models
+    environment:
+      - ZPO_CONFIG_PATH=/app/config.yaml
+      - ZPO_LOG_LEVEL=info
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "timeout", "5s", "/app/zpo", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - zpo-network
+
+volumes:
+  redis_data:
+    driver: local
+  zpo_data:
+    driver: local
+  zpo_logs:
+    driver: local
+  zpo_models:
+    driver: local
+
+networks:
+  zpo-network:
+    driver: bridge 

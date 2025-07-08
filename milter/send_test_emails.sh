@@ -11,7 +11,7 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-EMAILS_DIR="emails"
+EMAILS_DIR="../training-data"
 SUCCESSFUL_SENDS=0
 
 echo -e "${BLUE}🫏 ZPO Email Test Suite - 10 Emails (5 Clean, 5 Spam)${NC}"
@@ -19,8 +19,13 @@ echo "====================================================="
 
 # Check prerequisites
 if [[ ! -d "$EMAILS_DIR" ]]; then
-    echo -e "${RED}❌ Email files directory '$EMAILS_DIR' not found${NC}"
+    echo -e "${RED}❌ Training data directory '$EMAILS_DIR' not found${NC}"
     echo "Make sure you're running from the milter directory."
+    exit 1
+fi
+
+if [[ ! -d "$EMAILS_DIR/spam" ]] || [[ ! -d "$EMAILS_DIR/ham" ]]; then
+    echo -e "${RED}❌ Training data structure incomplete. Expected spam/ and ham/ subdirectories.${NC}"
     exit 1
 fi
 
@@ -85,7 +90,7 @@ declare -A email_descriptions=(
 
 # Send each email
 count=1
-for email_file in $(ls "$EMAILS_DIR"/*.eml | sort); do
+for email_file in $(ls "$EMAILS_DIR"/ham/*.eml "$EMAILS_DIR"/spam/*.eml | sort); do
     filename=$(basename "$email_file")
     description="${email_descriptions[$filename]:-Unknown}"
     subject=$(grep "^Subject:" "$email_file" | cut -d' ' -f2- | head -c50)

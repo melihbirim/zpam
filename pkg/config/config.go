@@ -122,6 +122,21 @@ type LearningConfig struct {
 	// Enable word frequency learning
 	Enabled bool `yaml:"enabled"`
 
+	// Backend selection: "file" or "redis"
+	Backend string `yaml:"backend"`
+
+	// File-based backend settings
+	File FileBackendConfig `yaml:"file"`
+
+	// Redis-based backend settings
+	Redis RedisBackendConfig `yaml:"redis"`
+
+	// Training
+	AutoTrain bool `yaml:"auto_train"`
+}
+
+// FileBackendConfig contains file-based learning settings
+type FileBackendConfig struct {
 	// Model file path
 	ModelPath string `yaml:"model_path"`
 
@@ -142,9 +157,38 @@ type LearningConfig struct {
 
 	// Performance
 	MaxVocabularySize int `yaml:"max_vocabulary_size"`
+}
 
-	// Training
-	AutoTrain bool `yaml:"auto_train"`
+// RedisBackendConfig contains Redis-based learning settings
+type RedisBackendConfig struct {
+	// Redis connection
+	RedisURL    string `yaml:"redis_url"`
+	KeyPrefix   string `yaml:"key_prefix"`
+	DatabaseNum int    `yaml:"database_num"`
+
+	// Tokenization (Rspamd-style OSB)
+	OSBWindowSize  int `yaml:"osb_window_size"`
+	MinTokenLength int `yaml:"min_token_length"`
+	MaxTokenLength int `yaml:"max_token_length"`
+	MaxTokens      int `yaml:"max_tokens"`
+
+	// Learning parameters
+	MinLearns     int     `yaml:"min_learns"`
+	MaxLearns     int     `yaml:"max_learns"`
+	SpamThreshold float64 `yaml:"spam_threshold"`
+
+	// Per-user support
+	PerUserStats bool   `yaml:"per_user_stats"`
+	DefaultUser  string `yaml:"default_user"`
+
+	// Token expiration (like Rspamd)
+	TokenTTL        string `yaml:"token_ttl"`        // Duration string like "720h"
+	CleanupInterval string `yaml:"cleanup_interval"` // Duration string like "6h"
+
+	// Performance
+	LocalCache bool   `yaml:"local_cache"`
+	CacheTTL   string `yaml:"cache_ttl"` // Duration string like "5m"
+	BatchSize  int    `yaml:"batch_size"`
 }
 
 // HeadersConfig contains email headers validation settings
@@ -319,19 +363,41 @@ func DefaultConfig() *Config {
 			MaxBackups: 3,
 		},
 		Learning: LearningConfig{
-			Enabled:           false,
-			ModelPath:         "zpo-model.json",
-			MinWordLength:     3,
-			MaxWordLength:     20,
-			CaseSensitive:     false,
-			SpamThreshold:     0.7,
-			MinWordCount:      2,
-			SmoothingFactor:   1.0,
-			UseSubjectWords:   true,
-			UseBodyWords:      true,
-			UseHeaderWords:    false,
-			MaxVocabularySize: 10000,
-			AutoTrain:         false,
+			Enabled:   false,
+			Backend:   "file",
+			AutoTrain: false,
+			File: FileBackendConfig{
+				ModelPath:         "zpo-model.json",
+				MinWordLength:     3,
+				MaxWordLength:     20,
+				CaseSensitive:     false,
+				SpamThreshold:     0.7,
+				MinWordCount:      2,
+				SmoothingFactor:   1.0,
+				UseSubjectWords:   true,
+				UseBodyWords:      true,
+				UseHeaderWords:    false,
+				MaxVocabularySize: 10000,
+			},
+			Redis: RedisBackendConfig{
+				RedisURL:        "redis://localhost:6379",
+				KeyPrefix:       "zpo:bayes",
+				DatabaseNum:     0,
+				OSBWindowSize:   5,
+				MinTokenLength:  3,
+				MaxTokenLength:  32,
+				MaxTokens:       1000,
+				MinLearns:       200,
+				MaxLearns:       5000,
+				SpamThreshold:   0.95,
+				PerUserStats:    true,
+				DefaultUser:     "global",
+				TokenTTL:        "720h",
+				CleanupInterval: "6h",
+				LocalCache:      true,
+				CacheTTL:        "5m",
+				BatchSize:       100,
+			},
 		},
 		Headers: HeadersConfig{
 			EnableSPF:             true,

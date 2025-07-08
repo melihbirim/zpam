@@ -1,0 +1,71 @@
+# Ignore development and build artifacts
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Ignore Docker files when building production image
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Ignore temporary and cache files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.cache
+
+# Ignore test results and coverage
+coverage.out
+*.test
+test_results/
+*.prof
+
+# Ignore build artifacts
+zpo
+zpo-milter
+zpo-test
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore documentation (production doesn't need it)
+README.md
+ROADMAP.md
+docs/
+*.md
+
+# Ignore development scripts and configs
+scripts/
+requirements.txt
+
+# Ignore model files (should be volume mounted or downloaded)
+models/
+*.json
+*.h5
+*.pb
+
+# Ignore backup and temporary config files
+*backup*
+*_backup*
+config-cached.yaml
+
+# Ignore test emails and examples for production
+examples/
+milter/emails/
+milter/send_test_emails.sh
+milter/test_zpo_postfix.sh
+
+# Node modules if any
+node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class 

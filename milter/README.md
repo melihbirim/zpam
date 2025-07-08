@@ -6,7 +6,7 @@ This directory contains comprehensive testing scripts for ZPO + Postfix milter i
 
 - **`test_zpo_postfix.sh`** - Complete integration test script (setup + test + cleanup)
 - **`send_test_emails.sh`** - Simple script to send 10 test emails (requires ZPO + Postfix running)
-- **`emails/`** - Directory containing 10 pre-written email files (5 clean, 5 spam)
+- **Training data** - Located in `../training-data/` with organized spam and ham email samples
 - **`README.md`** - This documentation
 
 ## 🚀 Quick Start
@@ -40,7 +40,11 @@ cd milter
 
 ## 📧 Test Email Details
 
-The test suite includes **10 carefully crafted emails** covering all spam levels:
+The test suite uses **10 carefully crafted emails** from `../training-data/` organized as:
+- `../training-data/spam/` - 5 spam email samples 
+- `../training-data/ham/` - 5 legitimate email samples
+
+Test emails covering all spam levels:
 
 | Level | Count | Description | Examples |
 |-------|-------|-------------|----------|
@@ -188,6 +192,8 @@ nc -z 127.0.0.1 25
 ```bash
 ./send_test_emails.sh
 ```
+
+> **Note**: Test emails are sourced from `../training-data/` which can also be used with ZPO's enhanced training system: `./zpo train --auto-discover training-data`
 
 ### 5. Check Results
 ```bash

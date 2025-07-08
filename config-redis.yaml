@@ -1,0 +1,218 @@
+detection:
+  spam_threshold: 4
+  features:
+    keyword_detection: true
+    header_analysis: true
+    attachment_scan: true
+    domain_check: true
+    frequency_tracking: true
+    learning_mode: true
+  weights:
+    subject_keywords: 3.0
+    body_keywords: 2.0
+    caps_ratio: 1.5
+    exclamation_ratio: 1.0
+    url_density: 2.5
+    html_ratio: 1.0
+    suspicious_headers: 2.0
+    attachment_risk: 1.5
+    domain_reputation: 3.0
+    encoding_issues: 1.0
+    from_to_mismatch: 2.0
+    subject_length: 0.5
+    frequency_penalty: 2.0
+    word_frequency: 3.0
+    header_validation: 2.5
+  keywords:
+    high_risk:
+      - "urgent"
+      - "act now"
+      - "click here immediately"
+      - "you have won"
+      - "congratulations"
+      - "lottery"
+      - "viagra"
+      - "cialis"
+      - "free money"
+      - "nigerian prince"
+    medium_risk:
+      - "click here"
+      - "special offer"
+      - "limited time"
+      - "discount"
+      - "credit"
+      - "loan"
+      - "weight loss"
+    low_risk:
+      - "free"
+      - "offer"
+      - "deal"
+      - "sale"
+      - "promotion"
+
+lists:
+  whitelist_emails: []
+  blacklist_emails: []
+  whitelist_domains:
+    - "example.org"
+  blacklist_domains: []
+  trusted_domains:
+    - "gmail.com"
+    - "outlook.com"
+
+performance:
+  max_concurrent_emails: 10
+  timeout_ms: 30000
+  cache_size: 1000
+  batch_size: 100
+
+logging:
+  level: "info"
+  file: ""
+  format: "text"
+  max_size_mb: 100
+  max_backups: 5
+
+# Redis-based Bayesian learning configuration
+learning:
+  enabled: true
+  backend: "redis"  # Use Redis backend
+  auto_train: false
+  
+  # File backend settings (fallback)
+  file:
+    model_path: "zpo-model.json"
+    min_word_length: 3
+    max_word_length: 20
+    case_sensitive: false
+    spam_threshold: 0.7
+    min_word_count: 2
+    smoothing_factor: 1.0
+    use_subject_words: true
+    use_body_words: true
+    use_header_words: false
+    max_vocabulary_size: 10000
+  
+  # Redis backend settings (primary)
+  redis:
+    redis_url: "redis://redis:6379"
+    key_prefix: "zpo:bayes"
+    database_num: 0
+    
+    # Rspamd-style OSB tokenization
+    osb_window_size: 5
+    min_token_length: 3
+    max_token_length: 32
+    max_tokens: 1000
+    
+    # Learning parameters
+    min_learns: 200
+    max_learns: 5000
+    spam_threshold: 0.95
+    
+    # Per-user support
+    per_user_stats: true
+    default_user: "global"
+    
+    # Token expiration
+    token_ttl: "720h"       # 30 days
+    cleanup_interval: "6h"  # Cleanup every 6 hours
+    
+    # Performance
+    local_cache: true
+    cache_ttl: "5m"
+    batch_size: 100
+
+headers:
+  enable_spf: true
+  enable_dkim: true
+  enable_dmarc: true
+  dns_timeout_ms: 5000
+  max_hop_count: 15
+  suspicious_server_score: 50
+  auth_weight: 1.0
+  suspicious_weight: 1.0
+  spf_fail_penalty: 0.9
+  dkim_missing_penalty: 1.0
+  dmarc_missing_penalty: 1.5
+  cache_size: 1000
+  cache_ttl_min: 60
+
+milter:
+  enabled: true
+  network: "tcp"
+  address: "127.0.0.1:7357"
+  read_timeout_ms: 10000
+  write_timeout_ms: 10000
+  skip_connect: false
+  skip_helo: false
+  skip_mail: false
+  skip_rcpt: false
+  skip_headers: false
+  skip_body: false
+  skip_eoh: false
+  skip_data: false
+  can_add_headers: true
+  can_change_headers: false
+  can_add_recipients: false
+  can_remove_recipients: false
+  can_change_body: false
+  can_quarantine: true
+  can_change_from: false
+  max_concurrent_connections: 50
+  graceful_shutdown_timeout_ms: 5000
+  reject_threshold: 5
+  quarantine_threshold: 4
+  reject_message: "Message rejected as spam"
+  quarantine_message: "Message quarantined for review"
+  add_spam_headers: true
+  spam_header_prefix: "X-ZPO-"
+
+plugins:
+  enabled: true
+  timeout_ms: 5000
+  max_concurrent: 5
+  score_method: "weighted"
+  
+  spamassassin:
+    enabled: false
+    weight: 2.0
+    priority: 10
+    timeout_ms: 8000
+    settings:
+      host: "localhost"
+      port: 783
+  
+  rspamd:
+    enabled: false
+    weight: 2.5
+    priority: 5
+    timeout_ms: 5000
+    settings:
+      host: "localhost"
+      port: 11333
+  
+  custom_rules:
+    enabled: true
+    weight: 1.0
+    priority: 20
+    timeout_ms: 1000
+    settings:
+      rules_file: "custom_rules.yml"
+  
+  virustotal:
+    enabled: false
+    weight: 3.0
+    priority: 1
+    timeout_ms: 10000
+    settings:
+      api_key: ""
+      cache_results: true
+  
+  machine_learning:
+    enabled: false
+    weight: 2.0
+    priority: 15
+    timeout_ms: 3000
+    settings:
+      model_type: "simple" 

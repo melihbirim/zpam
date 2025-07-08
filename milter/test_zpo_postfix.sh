@@ -68,10 +68,10 @@ check_prerequisites() {
         error "Neither sendmail nor telnet is available. Install one of them for email testing."
     fi
     
-    # Check if we have the emails directory
-    if [[ ! -d "emails" ]]; then
-        error "Email files directory 'emails' not found. Make sure you're running from the milter directory."
-    fi
+    # Check if we have the training data directory
+if [[ ! -d "../training-data" ]]; then
+    error "Training data directory '../training-data' not found. Make sure you're running from the milter directory."
+fi
     
     success "Prerequisites check passed"
 }
@@ -183,11 +183,11 @@ run_email_tests() {
 
 # Send test emails using pre-written .eml files
 send_test_emails() {
-    local emails_dir="emails"
+    local emails_dir="../training-data"
     local successful_sends=0
     
     if [[ ! -d "$emails_dir" ]]; then
-        error "Email files directory not found: $emails_dir"
+        error "Training data directory not found: $emails_dir"
     fi
     
     echo "🫏 ZPO Email Test Suite - 10 Emails (5 Clean, 5 Spam)"
@@ -209,7 +209,7 @@ send_test_emails() {
     
     # Send each email file
     local count=1
-    for email_file in $(ls "$emails_dir"/*.eml | sort); do
+    for email_file in $(ls "$emails_dir"/ham/*.eml "$emails_dir"/spam/*.eml | sort); do
         local filename=$(basename "$email_file")
         local description="${email_descriptions[$filename]:-Unknown}"
         local subject=$(grep "^Subject:" "$email_file" | cut -d' ' -f2- | head -c50)
