@@ -31,7 +31,7 @@ type SpamFilter struct {
 	parser        *email.Parser
 	config        *config.Config
 	tracker       *tracker.FrequencyTracker
-	learner       *learning.WordFrequency
+	learner       learning.BayesianClassifier // Use interface instead of concrete type
 	validator     *headers.Validator
 	pluginManager *plugins.DefaultPluginManager
 
@@ -118,27 +118,85 @@ func NewSpamFilterWithConfig(cfg *config.Config) *SpamFilter {
 		sf.validator = headers.NewValidator(headersConfig)
 	}
 
-	// Initialize word frequency learner if enabled
+	// Initialize Bayesian learner if enabled
 	if cfg.Learning.Enabled {
-		learningConfig := &learning.Config{
-			MinWordLength:     cfg.Learning.MinWordLength,
-			MaxWordLength:     cfg.Learning.MaxWordLength,
-			CaseSensitive:     cfg.Learning.CaseSensitive,
-			SpamThreshold:     cfg.Learning.SpamThreshold,
-			MinWordCount:      cfg.Learning.MinWordCount,
-			SmoothingFactor:   cfg.Learning.SmoothingFactor,
-			UseSubjectWords:   cfg.Learning.UseSubjectWords,
-			UseBodyWords:      cfg.Learning.UseBodyWords,
-			UseHeaderWords:    cfg.Learning.UseHeaderWords,
-			MaxVocabularySize: cfg.Learning.MaxVocabularySize,
-		}
+		switch cfg.Learning.Backend {
+		case "redis":
+			// Convert duration strings to time.Duration
+			tokenTTL, _ := time.ParseDuration(cfg.Learning.Redis.TokenTTL)
+			cleanupInterval, _ := time.ParseDuration(cfg.Learning.Redis.CleanupInterval)
+			cacheTTL, _ := time.ParseDuration(cfg.Learning.Redis.CacheTTL)
 
-		sf.learner = learning.NewWordFrequency(learningConfig)
+			redisConfig := &learning.RedisConfig{
+				RedisURL:        cfg.Learning.Redis.RedisURL,
+				KeyPrefix:       cfg.Learning.Redis.KeyPrefix,
+				DatabaseNum:     cfg.Learning.Redis.DatabaseNum,
+				OSBWindowSize:   cfg.Learning.Redis.OSBWindowSize,
+				MinTokenLength:  cfg.Learning.Redis.MinTokenLength,
+				MaxTokenLength:  cfg.Learning.Redis.MaxTokenLength,
+				MaxTokens:       cfg.Learning.Redis.MaxTokens,
+				MinLearns:       cfg.Learning.Redis.MinLearns,
+				MaxLearns:       cfg.Learning.Redis.MaxLearns,
+				SpamThreshold:   cfg.Learning.Redis.SpamThreshold,
+				PerUserStats:    cfg.Learning.Redis.PerUserStats,
+				DefaultUser:     cfg.Learning.Redis.DefaultUser,
+				TokenTTL:        tokenTTL,
+				CleanupInterval: cleanupInterval,
+				LocalCache:      cfg.Learning.Redis.LocalCache,
+				CacheTTL:        cacheTTL,
+				BatchSize:       cfg.Learning.Redis.BatchSize,
+			}
 
-		// Try to load existing model
-		if _, err := os.Stat(cfg.Learning.ModelPath); err == nil {
-			if err := sf.learner.LoadModel(cfg.Learning.ModelPath); err != nil {
-				fmt.Printf("Warning: Failed to load learning model: %v\n", err)
+			redisFilter, err := learning.NewRedisBayesianFilter(redisConfig)
+			if err != nil {
+				fmt.Printf("Warning: Failed to initialize Redis Bayesian filter: %v\n", err)
+				fmt.Printf("Falling back to file-based learning\n")
+				// Fallback to file-based learning
+				fileConfig := &learning.Config{
+					MinWordLength:     cfg.Learning.File.MinWordLength,
+					MaxWordLength:     cfg.Learning.File.MaxWordLength,
+					CaseSensitive:     cfg.Learning.File.CaseSensitive,
+					SpamThreshold:     cfg.Learning.File.SpamThreshold,
+					MinWordCount:      cfg.Learning.File.MinWordCount,
+					SmoothingFactor:   cfg.Learning.File.SmoothingFactor,
+					UseSubjectWords:   cfg.Learning.File.UseSubjectWords,
+					UseBodyWords:      cfg.Learning.File.UseBodyWords,
+					UseHeaderWords:    cfg.Learning.File.UseHeaderWords,
+					MaxVocabularySize: cfg.Learning.File.MaxVocabularySize,
+				}
+				fileFilter := learning.NewWordFrequency(fileConfig)
+				sf.learner = learning.NewWordFrequencyAdapter(fileFilter)
+			} else {
+				sf.learner = redisFilter
+			}
+
+		case "file":
+			fallthrough
+		default:
+			// File-based learning
+			fileConfig := &learning.Config{
+				MinWordLength:     cfg.Learning.File.MinWordLength,
+				MaxWordLength:     cfg.Learning.File.MaxWordLength,
+				CaseSensitive:     cfg.Learning.File.CaseSensitive,
+				SpamThreshold:     cfg.Learning.File.SpamThreshold,
+				MinWordCount:      cfg.Learning.File.MinWordCount,
+				SmoothingFactor:   cfg.Learning.File.SmoothingFactor,
+				UseSubjectWords:   cfg.Learning.File.UseSubjectWords,
+				UseBodyWords:      cfg.Learning.File.UseBodyWords,
+				UseHeaderWords:    cfg.Learning.File.UseHeaderWords,
+				MaxVocabularySize: cfg.Learning.File.MaxVocabularySize,
+			}
+
+			fileFilter := learning.NewWordFrequency(fileConfig)
+			sf.learner = learning.NewWordFrequencyAdapter(fileFilter)
+
+			// Try to load existing model for file-based learning
+			if adapter, ok := sf.learner.(*learning.WordFrequencyAdapter); ok {
+				if _, err := os.Stat(cfg.Learning.File.ModelPath); err == nil {
+					if err := adapter.WordFrequency.LoadModel(cfg.Learning.File.ModelPath); err != nil {
+						fmt.Printf("Warning: Failed to load learning model: %v\n", err)
+					}
+				}
 			}
 		}
 	}
@@ -892,7 +950,7 @@ func (sf *SpamFilter) scoreLearning(subject, body string) float64 {
 	}
 
 	// Get spam probability from learner
-	spamProb := sf.learner.ClassifyText(subject, body)
+	spamProb, _ := sf.learner.ClassifyText(subject, body, "")
 
 	// Convert probability to score (0-1 -> 0-10)
 	// Values > 0.5 are considered spammy
@@ -989,4 +1047,43 @@ func (sf *SpamFilter) scoreHeaders(headers map[string]string) float64 {
 
 	// Apply weight from config (now much more reasonable)
 	return score * authWeight * suspiciousWeight
+}
+
+// ResetLearning resets the learning model
+func (sf *SpamFilter) ResetLearning(user string) error {
+	if sf.learner == nil {
+		return fmt.Errorf("learning is not enabled")
+	}
+	return sf.learner.Reset(user)
+}
+
+// TrainSpam trains the learner on spam content
+func (sf *SpamFilter) TrainSpam(subject, body, user string) error {
+	if sf.learner == nil {
+		return fmt.Errorf("learning is not enabled")
+	}
+	return sf.learner.TrainSpam(subject, body, user)
+}
+
+// TrainHam trains the learner on ham content
+func (sf *SpamFilter) TrainHam(subject, body, user string) error {
+	if sf.learner == nil {
+		return fmt.Errorf("learning is not enabled")
+	}
+	return sf.learner.TrainHam(subject, body, user)
+}
+
+// SaveModel saves the learning model (file backend only)
+func (sf *SpamFilter) SaveModel(path string) error {
+	if sf.learner == nil {
+		return fmt.Errorf("learning is not enabled")
+	}
+
+	// Only file-based learning supports SaveModel
+	if adapter, ok := sf.learner.(*learning.WordFrequencyAdapter); ok {
+		return adapter.WordFrequency.SaveModel(path)
+	}
+
+	// For Redis backend, data is automatically persisted
+	return nil
 }

@@ -10,16 +10,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/zpo/spam-filter/pkg/config"
 	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/learning"
+	"github.com/zpo/spam-filter/pkg/filter"
 )
 
 var (
-	trainSpamDir    string
-	trainHamDir     string
-	trainModelPath  string
-	trainConfig     string
-	trainReset      bool
-	trainVerbose    bool
+	trainSpamDir   string
+	trainHamDir    string
+	trainModelPath string
+	trainConfig    string
+	trainReset     bool
+	trainVerbose   bool
 )
 
 var trainCmd = &cobra.Command{
@@ -39,41 +39,28 @@ The model learns word frequencies from training emails and can be used to improv
 			return fmt.Errorf("failed to load configuration: %v", err)
 		}
 
-		// Override model path if specified
-		if trainModelPath != "" {
-			cfg.Learning.ModelPath = trainModelPath
+		// Override model path if specified (only for file backend)
+		if trainModelPath != "" && cfg.Learning.Backend == "file" {
+			cfg.Learning.File.ModelPath = trainModelPath
 		}
 
-		// Convert config to learning config
-		learningConfig := &learning.Config{
-			MinWordLength:     cfg.Learning.MinWordLength,
-			MaxWordLength:     cfg.Learning.MaxWordLength,
-			CaseSensitive:     cfg.Learning.CaseSensitive,
-			SpamThreshold:     cfg.Learning.SpamThreshold,
-			MinWordCount:      cfg.Learning.MinWordCount,
-			SmoothingFactor:   cfg.Learning.SmoothingFactor,
-			UseSubjectWords:   cfg.Learning.UseSubjectWords,
-			UseBodyWords:      cfg.Learning.UseBodyWords,
-			UseHeaderWords:    cfg.Learning.UseHeaderWords,
-			MaxVocabularySize: cfg.Learning.MaxVocabularySize,
+		// Create spam filter which will initialize the appropriate learner
+		sf := filter.NewSpamFilterWithConfig(cfg)
+
+		if sf == nil {
+			return fmt.Errorf("failed to create spam filter")
 		}
 
-		// Create word frequency learner
-		wf := learning.NewWordFrequency(learningConfig)
-
-		// Load existing model if it exists and not resetting
-		if !trainReset {
-			if _, err := os.Stat(cfg.Learning.ModelPath); err == nil {
-				if err := wf.LoadModel(cfg.Learning.ModelPath); err != nil {
-					fmt.Printf("⚠️  Failed to load existing model: %v\n", err)
-					fmt.Printf("🔄 Starting with fresh model...\n")
-				} else {
-					fmt.Printf("📚 Loaded existing model from: %s\n", cfg.Learning.ModelPath)
-				}
+		// Reset model if requested
+		if trainReset {
+			if err := sf.ResetLearning(""); err != nil {
+				fmt.Printf("⚠️  Failed to reset model: %v\n", err)
+			} else {
+				fmt.Printf("🔄 Reset model successfully\n")
 			}
 		}
 
-		fmt.Printf("🧠 ZPO Word Frequency Training\n")
+		fmt.Printf("🧠 ZPO Bayesian Training (%s backend)\n", cfg.Learning.Backend)
 		fmt.Printf("═══════════════════════════════════════\n")
 		if trainSpamDir != "" {
 			fmt.Printf("📁 Spam directory: %s\n", trainSpamDir)
@@ -81,7 +68,13 @@ The model learns word frequencies from training emails and can be used to improv
 		if trainHamDir != "" {
 			fmt.Printf("📁 Ham directory: %s\n", trainHamDir)
 		}
-		fmt.Printf("💾 Model path: %s\n", cfg.Learning.ModelPath)
+
+		if cfg.Learning.Backend == "file" {
+			fmt.Printf("💾 Model path: %s\n", cfg.Learning.File.ModelPath)
+		} else {
+			fmt.Printf("🔗 Redis URL: %s\n", cfg.Learning.Redis.RedisURL)
+		}
+
 		if trainReset {
 			fmt.Printf("🔄 Reset mode: Starting fresh\n")
 		}
@@ -92,7 +85,7 @@ The model learns word frequencies from training emails and can be used to improv
 
 		// Train on spam emails
 		if trainSpamDir != "" {
-			spamCount, err := trainDirectory(wf, trainSpamDir, true, trainVerbose)
+			spamCount, err := trainDirectory(sf, trainSpamDir, true, trainVerbose)
 			if err != nil {
 				return fmt.Errorf("failed to train on spam emails: %v", err)
 			}
@@ -102,7 +95,7 @@ The model learns word frequencies from training emails and can be used to improv
 
 		// Train on ham emails
 		if trainHamDir != "" {
-			hamCount, err := trainDirectory(wf, trainHamDir, false, trainVerbose)
+			hamCount, err := trainDirectory(sf, trainHamDir, false, trainVerbose)
 			if err != nil {
 				return fmt.Errorf("failed to train on ham emails: %v", err)
 			}
@@ -112,44 +105,47 @@ The model learns word frequencies from training emails and can be used to improv
 
 		duration := time.Since(start)
 
-		// Save the model
-		if err := wf.SaveModel(cfg.Learning.ModelPath); err != nil {
-			return fmt.Errorf("failed to save model: %v", err)
+		// Save the model (for file backend)
+		modelPath := ""
+		if cfg.Learning.Backend == "file" {
+			modelPath = cfg.Learning.File.ModelPath
+			if err := sf.SaveModel(modelPath); err != nil {
+				return fmt.Errorf("failed to save model: %v", err)
+			}
 		}
 
 		fmt.Printf("\n🎉 Training Complete!\n")
 		fmt.Printf("📊 Total emails processed: %d\n", totalEmails)
 		fmt.Printf("⏱️  Time taken: %v\n", duration)
 		fmt.Printf("📈 Rate: %.0f emails/second\n", float64(totalEmails)/duration.Seconds())
-		fmt.Printf("💾 Model saved to: %s\n", cfg.Learning.ModelPath)
 
-		// Print model statistics
-		fmt.Printf("\n")
-		wf.PrintStats(os.Stdout)
+		if modelPath != "" {
+			fmt.Printf("💾 Model saved to: %s\n", modelPath)
+		}
 
 		return nil
 	},
 }
 
 // trainDirectory trains on all emails in a directory
-func trainDirectory(wf *learning.WordFrequency, dir string, isSpam bool, verbose bool) (int, error) {
+func trainDirectory(sf *filter.SpamFilter, dir string, isSpam bool, verbose bool) (int, error) {
 	var count int
-	
+
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if info.IsDir() {
 			return nil
 		}
-		
+
 		// Check if file looks like an email
 		ext := strings.ToLower(filepath.Ext(path))
 		if ext != ".eml" && ext != ".msg" && ext != ".email" && ext != "" {
 			return nil
 		}
-		
+
 		// Parse email
 		parser := email.NewParser()
 		parsedEmail, err := parser.ParseFromFile(path)
@@ -159,29 +155,29 @@ func trainDirectory(wf *learning.WordFrequency, dir string, isSpam bool, verbose
 			}
 			return nil // Skip but continue
 		}
-		
+
 		// Train on email
 		if isSpam {
-			err = wf.TrainSpam(parsedEmail.Subject, parsedEmail.Body)
+			err = sf.TrainSpam(parsedEmail.Subject, parsedEmail.Body, "")
 		} else {
-			err = wf.TrainHam(parsedEmail.Subject, parsedEmail.Body)
+			err = sf.TrainHam(parsedEmail.Subject, parsedEmail.Body, "")
 		}
-		
+
 		if err != nil {
 			if verbose {
 				fmt.Printf("⚠️  Failed to train on %s: %v\n", path, err)
 			}
 			return nil // Skip but continue
 		}
-		
+
 		count++
 		if verbose && count%100 == 0 {
 			fmt.Printf("📚 Processed %d emails...\n", count)
 		}
-		
+
 		return nil
 	})
-	
+
 	return count, err
 }
 
@@ -192,4 +188,4 @@ func init() {
 	trainCmd.Flags().StringVarP(&trainConfig, "config", "c", "", "Configuration file path")
 	trainCmd.Flags().BoolVarP(&trainReset, "reset", "r", false, "Reset existing model and start fresh")
 	trainCmd.Flags().BoolVarP(&trainVerbose, "verbose", "v", false, "Verbose output")
-} 
+}
