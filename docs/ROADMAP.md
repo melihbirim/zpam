@@ -90,6 +90,37 @@
 - Configuration errors are clear and actionable
 - Web UI works on mobile devices
 
+### 1.4 Enhanced Training System
+**Status:** 🔴 Not Started
+
+```bash
+./zpo train --auto-discover ~/Mail/             # Auto-find training data
+./zpo train --spam-dir spam/ --ham-dir clean/   # Traditional training
+./zpo train --mbox-file archive.mbox --interactive
+./zpo train --validate-only                     # Check training data quality
+./zpo train --benchmark                         # Test accuracy improvements
+./zpo train --resume                            # Continue interrupted training
+./zpo train --optimize                          # Auto-optimize training sets
+```
+
+**Requirements:**
+- Multiple input sources (directories, mbox files, individual emails)
+- Auto-detection of spam vs ham from folder structure
+- Progress tracking with live progress bars and statistics
+- Training data quality validation
+- Resume capability for interrupted sessions
+- Before/after accuracy estimates
+- Learning curve visualization and analytics
+- Token/feature analysis and recommendations
+- Integration with running service (hot training)
+- Multi-backend support (Redis/file)
+
+**Success Criteria:**
+- New users can train effective models in < 10 minutes
+- Training accuracy reaches >95% with minimal data
+- Training process is resumable and fault-tolerant
+- Clear recommendations for improving training data quality
+
 ---
 
 ## 🔧 **Phase 2: Developer Experience**

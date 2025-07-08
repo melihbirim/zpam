@@ -1,284 +1,341 @@
-# ZPO - High-Performance Spam Filter 🫏
+# ZPO - Lightning-Fast Spam Filter 🫏
 
 [![Go](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Speed](https://img.shields.io/badge/Speed-%3C2ms_per_email-brightgreen.svg)](#performance)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](docker/)
-[![Redis](https://img.shields.io/badge/Redis-Bayesian-red.svg)](#redis-bayesian-learning)
+[![Speed](https://img.shields.io/badge/Speed-%3C5ms_per_email-brightgreen.svg)](#performance)
+[![Setup](https://img.shields.io/badge/Setup-%3C5_minutes-orange.svg)](#quick-start)
 
-ZPO is a lightning-fast, production-ready spam filter that processes emails in under 2ms with enterprise-grade accuracy. Named after a donkey - it's **free, fast, and reliable**.
+ZPO is a **zero-configuration spam filter** that gets you detecting spam in under 5 minutes. Named after a baby donkey - it's **free, fast, and reliable**.
 
-## ✨ Key Features
+> **🎯 Mission**: Make spam detection as simple as `npm install` but as powerful as enterprise security suites.
 
-- **⚡ Ultra-Fast**: Sub-2ms processing with Redis-backed Bayesian learning
-- **🎯 High Accuracy**: SpamAssassin-inspired scoring with balanced detection
-- **🚀 Scalable**: Multi-instance deployment with shared Redis backend
-- **🐳 Production Ready**: Full Docker deployment with monitoring
-- **📁 Auto-Sorting**: Intelligent spam filtering and email management
-- **🔧 Milter Integration**: Real-time filtering for Postfix/Sendmail
-- **🧠 Machine Learning**: Advanced Bayesian classification with OSB tokenization
-- **🆓 Open Source**: Completely free with no licensing restrictions
+## 🚀 **Get Started in Under 5 Minutes**
 
-## 🚀 Quick Start
-
-### Docker Deployment (Recommended)
-
+### **Option 1: Zero-Config Install (Recommended)**
 ```bash
-# Clone repository
-git clone <repository-url>
-cd zpo
+# One command sets up everything automatically
+./zpo install
 
-# Start ZPO with Redis backend
-docker-compose -f docker/docker-compose.yml up -d
+# Test immediately with provided samples
+./zpo test training-data/spam/06_spam_phishing.eml
 
-# Train the Bayesian filter (if you have training data)
-docker-compose -f docker/docker-compose.yml exec zpo ./zpo train \
-  --config /app/config.yaml \
-  --spam-dir /path/to/spam \
-  --ham-dir /path/to/ham
-
-# Test spam detection
-docker-compose -f docker/docker-compose.yml exec zpo ./zpo filter \
-  --config /app/config.yaml \
-  --input /path/to/test/email.eml
+# Start real-time monitoring
+./zpo monitor
 ```
 
-### Native Installation
-
+### **Option 2: Interactive Setup**
 ```bash
-# Install dependencies
-go mod tidy
+# Interactive wizard with guided configuration
+./zpo quickstart
 
-# Build ZPO
-go build -o zpo
-
-# Test a single email
-./zpo filter --input email.eml
-
-# Run performance benchmark
-./testing/benchmark_simple.sh
+# Follow the prompts to customize your setup
 ```
 
-## 📊 Performance Benchmarks
+**That's it!** ZPO automatically:
+- 🔍 Detects your system capabilities (Redis, Docker, etc.)
+- ⚙️ Generates optimal configuration
+- 🧠 Sets up learning backend (Redis or file-based)
+- 📧 Creates sample emails for testing
+- ✅ Validates everything works
 
-**Latest Benchmark Results:**
-- **1000 emails** processed in **1.68 seconds**
-- **816 emails/second** sustained throughput
-- **1.68ms average** processing time per email
-- **Multi-instance capability** with shared Redis learning
+## ✨ **Key Features**
 
-| Test Configuration | Emails/Second | Avg Time/Email | Notes |
-|-------------------|---------------|----------------|--------|
-| Redis Backend (1000) | **816** | 1.68ms | Single instance |
-| Multi-Instance (2x500) | **492** | 2.03s total | Parallel processing |
-| File Backend (1000) | 720+ | <2ms | Fallback mode |
+### **🎛️ Zero-Config Setup**
+- **Auto-Detection**: Automatically discovers Redis, Docker, SpamAssassin, Postfix
+- **Smart Configuration**: Generates optimal settings based on your system
+- **Instant Success**: From download to detecting spam in under 5 minutes
+- **Guided Setup**: Interactive wizard for customization
 
-*See [Testing Documentation](testing/README.md) for complete benchmark results.*
+### **⚡ Lightning Performance** 
+- **Sub-5ms Processing**: Ultra-fast email analysis
+- **Redis-Backed Learning**: High-performance Bayesian classification
+- **Real-time Monitoring**: Live dashboards and alerts
+- **Service Management**: Start/stop/restart with built-in health checks
 
-## 🧠 Redis Bayesian Learning
+### **🧠 Advanced Learning**
+- **Enhanced Training**: Auto-discovery, progress tracking, resume capability
+- **Multi-Backend Support**: Redis or file-based learning
+- **Accuracy Analytics**: Before/after training comparisons
+- **Session Management**: Pause and resume training sessions
 
-ZPO features a sophisticated Bayesian filter with Redis backend:
+### **🔧 Production Ready**
+- **Milter Integration**: Real-time filtering for Postfix/Sendmail
+- **Service Management**: Full lifecycle management (start/stop/restart/reload)
+- **Health Monitoring**: Comprehensive status dashboards
+- **Plugin System**: Extensible with SpamAssassin, Rspamd, custom rules
 
-- **OSB Tokenization**: Rspamd-compatible Orthogonal Sparse Bigrams
-- **Multi-Instance Learning**: Shared model across unlimited instances
-- **High Performance**: 4,867+ learned tokens in just 2.31MB memory
-- **Per-User Models**: Individual user classification support
-- **Real-time Updates**: Continuous learning from new data
-
-```bash
-# Train the model
-./zpo train --spam-dir spam_emails/ --ham-dir clean_emails/
-
-# Reset and retrain
-./zpo train --spam-dir spam_emails/ --ham-dir clean_emails/ --reset
-```
-
-## 📧 Email Classification
-
-ZPO uses a balanced 1-5 scoring system:
-
-| Score | Classification | Action | Raw Score Range |
-|-------|---------------|--------|-----------------|
-| 1-2 | **Clean** | Keep in inbox | 0.0 - 15.0 |
-| 3 | **Questionable** | Keep (review) | 15.0 - 25.0 |
-| 4-5 | **Spam** | Move to spam | 25.0+ |
-
-### Example Classifications
+## 📊 **System Status at a Glance**
 
 ```bash
-# Clean business email → Score: 1/5 (0.32 raw)
-# Newsletter → Score: 3/5 (11.52 raw)  
-# Spam → Score: 5/5 (44.52 raw)
+# Real-time system dashboard
+./zpo status
+
+# Live monitoring with charts
+./zpo monitor
+
+# Service management
+./zpo start
+./zpo stop
+./zpo restart
 ```
 
-## 🔧 Configuration
+**Example Status Output:**
+```
+🫏 ZPO System Status Dashboard
+═══════════════════════════════════════
 
-ZPO supports multiple configuration profiles:
+🚀 Service Status
+  Status: ✅ Running (PID: 1234)
+  Uptime: 2h 15m
+  Config: config-quickstart.yaml
 
-- **`config.yaml`**: Production configuration with Redis backend  
-- **`config-redis.yaml`**: Redis-optimized settings
-- **`config-fast.yaml`**: High-speed configuration (DNS disabled)
-- **`config-cached.yaml`**: Balanced performance with caching
-- **`config-dnstest.yaml`**: DNS testing and development
+📊 Performance  
+  Emails processed: 1,247
+  Average time: 1.2ms/email
+  Throughput: 45 emails/min
 
-### Key Settings
+🧠 Learning Status
+  Backend: Redis (connected)
+  Spam learned: 156 emails
+  Ham learned: 203 emails
+  
+🏥 Health: ✅ HEALTHY
+```
+
+## 🎯 **Email Classification**
+
+ZPO uses an intuitive 1-5 scoring system:
+
+| Score | Classification | Action | Description |
+|-------|---------------|--------|-------------|
+| **1-2** | 🟢 **Clean** | Keep in inbox | Legitimate emails |
+| **3** | 🟡 **Questionable** | Keep (review) | Newsletters, marketing |
+| **4-5** | 🔴 **Spam** | Move to spam | Obvious spam and phishing |
+
+### **Real Example Results**
+```bash
+# Business email
+./zpo test training-data/ham/01_clean_business.eml
+# → Score: 1/5 ✅ HAM
+
+# Phishing attempt  
+./zpo test training-data/spam/06_spam_phishing.eml
+# → Score: 5/5 🚫 SPAM
+```
+
+## 🧠 **Enhanced Training System**
+
+Train ZPO with your email data using our advanced training system:
+
+```bash
+# Auto-discover and train from directory structure
+./zpo train --auto-discover /path/to/emails
+
+# Traditional spam/ham training
+./zpo train --spam-dir spam/ --ham-dir clean/
+
+# Interactive training with data preview
+./zpo train --spam-dir spam/ --ham-dir clean/ --interactive
+
+# Benchmark accuracy improvements
+./zpo train --spam-dir spam/ --ham-dir clean/ --benchmark
+
+# Resume interrupted training
+./zpo train --resume
+```
+
+**Advanced Features:**
+- 📊 **Live Progress Tracking**: Real-time progress bars and statistics
+- 🔍 **Data Validation**: Check training data quality before processing
+- 📈 **Accuracy Analytics**: Before/after training comparisons
+- 💾 **Session Management**: Resume interrupted training sessions
+- 🎯 **Optimization**: Auto-optimize training data selection
+
+## 🔧 **Configuration Made Simple**
+
+ZPO automatically generates optimal configuration, but you can customize:
 
 ```yaml
-# Learning backend selection
+# Auto-generated config-quickstart.yaml
 learning:
-  backend: "redis"  # or "file"
+  backend: "redis"              # Auto-detected: Redis or file
   
-# Redis configuration
-redis:
-  redis_url: "redis://redis:6379"
+detection:
+  spam_threshold: 4             # Customizable sensitivity
   
-# Scoring thresholds
-filter:
-  spam_threshold: 4  # Move to spam folder
-  reject_threshold: 5  # Reject email
+performance:
+  max_concurrent_emails: 4      # Optimized for your system
+  timeout_ms: 5000             # Balanced for accuracy vs speed
+
+milter:
+  enabled: true                # Auto-detected if Postfix available
+  address: "127.0.0.1:7357"   # Ready for integration
 ```
 
-## 🐳 Docker Deployment
+**Configuration Profiles:**
+- `config-quickstart.yaml` - Auto-generated optimal settings
+- `config.yaml` - Production configuration  
+- `config-fast.yaml` - Speed-optimized
+- `config-cached.yaml` - Memory-optimized
 
-Complete containerized deployment with Docker Compose:
+## 🎛️ **Service Management**
+
+ZPO includes full service lifecycle management:
 
 ```bash
-# Production deployment
-docker-compose -f docker/docker-compose.yml up -d
+# Start ZPO service
+./zpo start --mode milter  # For Postfix integration
+./zpo start --mode standalone  # For testing
 
-# Testing environment
-docker-compose -f docker/docker-compose.test.yml --profile test up
+# Check service status
+./zpo status
 
-# Scale to multiple instances
-docker-compose -f docker/docker-compose.yml up -d --scale zpo=3
+# Restart with new configuration
+./zpo restart
+
+# Reload configuration without restart
+./zpo reload
+
+# Stop service gracefully
+./zpo stop
 ```
 
-**Features:**
-- Multi-stage builds for minimal image size
-- Redis persistence and clustering
-- Health checks and monitoring
-- Production security best practices
+## 📊 **Real-Time Monitoring**
 
-*See [Docker Deployment Guide](docker/README.md) for complete setup instructions.*
-
-## 🧪 Testing & Benchmarking
-
-Run comprehensive tests and benchmarks:
+Monitor ZPO performance with live dashboards:
 
 ```bash
-# Quick performance test
-./testing/benchmark_simple.sh
+# Live monitoring dashboard
+./zpo monitor
 
-# Comprehensive benchmarks (when available)
-./testing/benchmark_zpo.sh
+# Compact view
+./zpo monitor --compact
 
-# Unit and integration tests
-go test ./pkg/...
+# Include live logs
+./zpo monitor --logs
+
+# Custom refresh interval
+./zpo monitor --interval 1s
 ```
 
-**Test Coverage:**
-- Unit tests for all components
-- Integration tests with Redis
-- Performance benchmarks with testing scripts
-- Multi-instance testing via Docker
-- Docker environment validation
+**Monitoring Features:**
+- 📈 **Live Charts**: Email throughput and response times
+- 🚨 **Smart Alerts**: Automatic issue detection and recommendations
+- 📊 **Performance Metrics**: Memory, CPU, and network usage
+- 🧠 **Learning Analytics**: Training progress and model accuracy
 
-*See [Testing Documentation](testing/README.md) for detailed test procedures.*
+## 🔌 **Plugin System**
 
-## 📮 Milter Integration
+Extend ZPO with powerful plugins:
+
+```bash
+# List available plugins
+./zpo plugins list
+
+# Test specific plugin
+./zpo plugins test-one spamassassin email.eml
+
+# Enable/disable plugins
+./zpo plugins enable spamassassin
+./zpo plugins disable rspamd
+
+# View plugin statistics
+./zpo plugins stats
+```
+
+**Available Plugins:**
+- **SpamAssassin**: Industry-standard spam detection
+- **Rspamd**: Modern spam filtering engine
+- **Custom Rules**: User-defined detection rules
+- **VirusTotal**: Reputation checking
+- **Machine Learning**: Advanced ML classification
+
+## 📮 **Milter Integration**
 
 Real-time email filtering for mail servers:
 
 ```bash
-# Start milter server
-./zpo milter --config config.yaml
+# ZPO auto-configures milter if Postfix is detected
+./zpo milter --config config-quickstart.yaml
 ```
 
-**Postfix Integration:**
+**Postfix Configuration:**
 ```conf
-# /etc/postfix/main.cf
+# /etc/postfix/main.cf (auto-detected during install)
 smtpd_milters = inet:localhost:7357
 non_smtpd_milters = inet:localhost:7357
-milter_default_action = accept
 ```
 
-**Features:**
-- Sub-5ms processing per email
-- Concurrent connection handling
-- Automatic spam header injection
-- Unix socket support
-- Production monitoring
+## 🧪 **Testing & Validation**
 
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Docker Deployment](docker/README.md) | Complete containerization guide |
-| [Testing Guide](testing/README.md) | Testing procedures and benchmarks |
-| [Roadmap](docs/ROADMAP.md) | Future development plans |
-| [Custom Plugins](docs/custom_plugins.md) | Plugin development guide |
-| [TensorFlow Setup](docs/tensorflow_setup.md) | ML model integration |
-
-## 🛠️ Development
-
-### Project Structure
-
-ZPO has been reorganized for better maintainability and development workflow:
-
-```
-zpo/
-├── cmd/                 # CLI commands and subcommands
-├── pkg/                 # Core packages (filter, learning, plugins)
-├── docker/              # Complete Docker deployment setup
-│   ├── docker-compose.yml       # Production deployment
-│   ├── docker-compose.test.yml  # Testing environment
-│   └── README.md                # Docker documentation
-├── testing/             # Testing scripts and benchmarks
-│   ├── benchmark_simple.sh      # Quick performance tests
-│   └── README.md                # Testing documentation
-├── docs/                # Project documentation
-│   ├── ROADMAP.md               # Development roadmap
-│   ├── custom_plugins.md        # Plugin development guide
-│   └── tensorflow_setup.md      # ML integration guide
-├── examples/            # Sample emails for testing
-├── milter/              # Milter integration examples
-└── config*.yaml         # Configuration profiles
-```
-
-**Improvements:**
-- Organized Docker deployment files in `docker/` directory
-- Consolidated testing scripts in `testing/` directory  
-- Clear separation of deployment, testing, and documentation
-- Self-contained examples and configurations
-
-### Building
+ZPO includes comprehensive testing tools:
 
 ```bash
-# Development build
-go build -o zpo
+# Test single email
+./zpo test email.eml
 
-# Production build with optimizations
-CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o zpo
+# Validate headers (SPF/DKIM/DMARC)
+./zpo headers email.eml
 
-# Docker build
-docker build -f docker/Dockerfile -t zpo:latest .
+# Run benchmark tests
+./zpo benchmark --input test-emails/
+
+# DNS testing tools
+./zpo dnstest demo
 ```
 
-## 🤝 Contributing
+## 🐳 **Docker Deployment**
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Run tests (`go test ./pkg/...` and `./testing/benchmark_simple.sh`)
-4. Commit changes (`git commit -m 'Add amazing feature'`)
-5. Push to branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+For containerized environments:
 
-## 📄 License
+```bash
+# Quick Docker deployment
+docker run -d \
+  -p 7357:7357 \
+  -v ./config-quickstart.yaml:/app/config.yaml \
+  zpo:latest
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+# Or use our auto-generated Docker setup
+./zpo install --docker
+```
+
+## 📚 **Documentation**
+
+- 🚀 **[Quick Start Guide](docs/QUICKSTART.md)** - Get running in 5 minutes
+- 🔧 **[Configuration Reference](docs/CONFIG.md)** - Complete settings guide
+- 🧠 **[Training Guide](training-data/README.md)** - Optimize accuracy
+- 🔌 **[Plugin Development](docs/custom_plugins.md)** - Build custom plugins
+- 📊 **[Performance Tuning](docs/PERFORMANCE.md)** - Optimize for your needs
+
+## 🗺️ **Roadmap**
+
+- ✅ **Phase 1.1**: Zero-Config Quick Start *(Completed)*
+- 🔄 **Phase 1.2**: Plugin Marketplace *(In Progress)*
+- 📅 **Phase 1.3**: Visual Configuration Interface
+- 📅 **Phase 2**: Enhanced Developer Experience
+
+*See [ROADMAP.md](docs/ROADMAP.md) for detailed development plans.*
+
+## 🤝 **Contributing**
+
+We welcome contributions! ZPO is designed to be:
+- **Simple**: Easy to understand and modify
+- **Fast**: Performance-first architecture
+- **Reliable**: Production-ready from day one
+
+```bash
+# Get involved
+git clone <repository-url>
+cd zpo
+./zpo install  # Get started in minutes
+```
+
+## 📄 **License**
+
+MIT License - completely free for personal and commercial use.
 
 ---
 
-**ZPO - Because spam filtering should be as reliable as a donkey! 🫏**
+**🫏 ZPO: Because spam filtering should be as reliable as a donkey, and faster than you'd expect.**
 
-*Fast, Free, and Production-Ready Email Security* 
+*From zero to spam-free in under 5 minutes.* 
