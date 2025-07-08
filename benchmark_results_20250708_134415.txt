@@ -1,6 +1,6 @@
-🚀 ZPO Performance Benchmark - 20250708_134415
+🚀 ZPAM Performance Benchmark - 20250708_134415
 =====================================================
-Testing ZPO spam filter performance with various email batch sizes
+Testing ZPAM spam filter performance with various email batch sizes
 
 🔍 Checking container status...
 ✅ Container ready

@@ -248,21 +248,61 @@ func (pm *DefaultPluginManager) executePlugin(ctx context.Context, name string, 
 
 	// Execute plugin based on its type
 	var err error
-	switch p := plugin.(type) {
-	case ContentAnalyzer:
-		result, err = p.AnalyzeContent(timeoutCtx, email)
-	case ReputationChecker:
-		result, err = p.CheckReputation(timeoutCtx, email)
-	case AttachmentScanner:
-		result, err = p.ScanAttachments(timeoutCtx, email.Attachments)
-	case MLClassifier:
-		result, err = p.Classify(timeoutCtx, email)
-	case ExternalEngine:
-		result, err = p.Analyze(timeoutCtx, email)
-	case CustomRuleEngine:
-		result, err = p.EvaluateRules(timeoutCtx, email)
-	default:
-		result.Error = fmt.Errorf("unknown plugin type for %s", name)
+
+	// Special handling for Lua plugins - use their declared interfaces
+	if luaPlugin, ok := plugin.(*LuaPlugin); ok {
+		interfaces := luaPlugin.GetInterfaces()
+		if len(interfaces) > 0 {
+			// Use the first declared interface
+			switch interfaces[0] {
+			case "ContentAnalyzer":
+				if contentAnalyzer, ok := plugin.(ContentAnalyzer); ok {
+					result, err = contentAnalyzer.AnalyzeContent(timeoutCtx, email)
+				}
+			case "ReputationChecker":
+				if repChecker, ok := plugin.(ReputationChecker); ok {
+					result, err = repChecker.CheckReputation(timeoutCtx, email)
+				}
+			case "AttachmentScanner":
+				if attScanner, ok := plugin.(AttachmentScanner); ok {
+					result, err = attScanner.ScanAttachments(timeoutCtx, email.Attachments)
+				}
+			case "MLClassifier":
+				if mlClassifier, ok := plugin.(MLClassifier); ok {
+					result, err = mlClassifier.Classify(timeoutCtx, email)
+				}
+			case "ExternalEngine":
+				if extEngine, ok := plugin.(ExternalEngine); ok {
+					result, err = extEngine.Analyze(timeoutCtx, email)
+				}
+			case "CustomRuleEngine":
+				if ruleEngine, ok := plugin.(CustomRuleEngine); ok {
+					result, err = ruleEngine.EvaluateRules(timeoutCtx, email)
+				}
+			default:
+				result.Error = fmt.Errorf("unknown interface: %s", interfaces[0])
+			}
+		} else {
+			result.Error = fmt.Errorf("Lua plugin %s has no declared interfaces", name)
+		}
+	} else {
+		// Standard Go plugin interface detection
+		switch p := plugin.(type) {
+		case ContentAnalyzer:
+			result, err = p.AnalyzeContent(timeoutCtx, email)
+		case ReputationChecker:
+			result, err = p.CheckReputation(timeoutCtx, email)
+		case AttachmentScanner:
+			result, err = p.ScanAttachments(timeoutCtx, email.Attachments)
+		case MLClassifier:
+			result, err = p.Classify(timeoutCtx, email)
+		case ExternalEngine:
+			result, err = p.Analyze(timeoutCtx, email)
+		case CustomRuleEngine:
+			result, err = p.EvaluateRules(timeoutCtx, email)
+		default:
+			result.Error = fmt.Errorf("unknown plugin type for %s", name)
+		}
 	}
 
 	processingTime := time.Since(start)
