@@ -573,12 +573,27 @@ func runPluginsTest(cmd *cobra.Command, args []string) {
 	// Create plugin manager and test
 	pluginManager := plugins.NewPluginManager()
 
-	// Register plugins
+	// Register built-in plugins
 	pluginManager.RegisterPlugin(plugins.NewSpamAssassinPlugin())
 	pluginManager.RegisterPlugin(plugins.NewRspamdPlugin())
 	pluginManager.RegisterPlugin(plugins.NewCustomRulesPlugin())
 	pluginManager.RegisterPlugin(plugins.NewVirusTotalPlugin())
 	pluginManager.RegisterPlugin(plugins.NewMLPlugin())
+
+	// Load and register Lua plugins
+	registry := plugins.NewDefaultRegistry()
+	luaLoader := plugins.NewPluginLoader(registry)
+	if err := luaLoader.LoadFromDirectory(); err != nil {
+		fmt.Printf("Warning: Failed to load Lua plugins: %v\n", err)
+	} else {
+		// Register loaded Lua plugins with the plugin manager
+		loadedPlugins := registry.List()
+		for _, luaPlugin := range loadedPlugins {
+			if err := pluginManager.RegisterPlugin(luaPlugin); err != nil {
+				fmt.Printf("Warning: Failed to register Lua plugin %s: %v\n", luaPlugin.Name(), err)
+			}
+		}
+	}
 
 	// Load configurations
 	pluginConfigs := map[string]*plugins.PluginConfig{}
@@ -596,6 +611,20 @@ func runPluginsTest(cmd *cobra.Command, args []string) {
 	}
 	if cfg.Plugins.MachineLearning.Enabled {
 		pluginConfigs["machine_learning"] = convertConfigToPluginConfig(cfg.Plugins.MachineLearning)
+	}
+
+	// Load discovered Lua plugins with default configuration
+	loadedPlugins := registry.List()
+	for _, luaPlugin := range loadedPlugins {
+		pluginName := luaPlugin.Name()
+		// Enable Lua plugins by default for testing
+		pluginConfigs[pluginName] = &plugins.PluginConfig{
+			Enabled:  true,
+			Weight:   1.0,
+			Timeout:  5 * time.Second,
+			Priority: 10,
+			Settings: make(map[string]any),
+		}
 	}
 
 	if len(pluginConfigs) == 0 {
@@ -701,6 +730,7 @@ func runPluginsTestOne(cmd *cobra.Command, args []string) {
 	var plugin plugins.Plugin
 	var pluginConfig *plugins.PluginConfig
 
+	// Check built-in plugins first
 	switch pluginName {
 	case "spamassassin":
 		plugin = plugins.NewSpamAssassinPlugin()
@@ -718,9 +748,38 @@ func runPluginsTestOne(cmd *cobra.Command, args []string) {
 		plugin = plugins.NewMLPlugin()
 		pluginConfig = convertConfigToPluginConfig(cfg.Plugins.MachineLearning)
 	default:
-		fmt.Printf("Unknown plugin: %s\n", pluginName)
-		fmt.Println("Available plugins: spamassassin, rspamd, custom_rules, virustotal, machine_learning")
-		os.Exit(1)
+		// Try to find a Lua plugin with this name
+		registry := plugins.NewDefaultRegistry()
+		luaLoader := plugins.NewPluginLoader(registry)
+		if err := luaLoader.LoadFromDirectory(); err == nil {
+			if luaPlugin, err := registry.Get(pluginName); err == nil {
+				plugin = luaPlugin
+				// Create a basic config for Lua plugins
+				pluginConfig = &plugins.PluginConfig{
+					Enabled:  true,
+					Weight:   1.0,
+					Timeout:  5 * time.Second,
+					Priority: 10,
+					Settings: make(map[string]any),
+				}
+			}
+		}
+
+		if plugin == nil {
+			fmt.Printf("Unknown plugin: %s\n", pluginName)
+			fmt.Println("Available plugins: spamassassin, rspamd, custom_rules, virustotal, machine_learning")
+			// Also show available Lua plugins
+			if registry != nil {
+				luaPlugins := registry.List()
+				if len(luaPlugins) > 0 {
+					fmt.Println("Available Lua plugins:")
+					for _, p := range luaPlugins {
+						fmt.Printf("  - %s\n", p.Name())
+					}
+				}
+			}
+			os.Exit(1)
+		}
 	}
 
 	// Force enable for testing
@@ -746,20 +805,62 @@ func runPluginsTestOne(cmd *cobra.Command, args []string) {
 
 	// Determine plugin interface and execute accordingly
 	var result *plugins.PluginResult
-	switch p := plugin.(type) {
-	case plugins.ContentAnalyzer:
-		result, err = p.AnalyzeContent(ctx, emailObj)
-	case plugins.ExternalEngine:
-		result, err = p.Analyze(ctx, emailObj)
-	case plugins.CustomRuleEngine:
-		result, err = p.EvaluateRules(ctx, emailObj)
-	case plugins.ReputationChecker:
-		result, err = p.CheckReputation(ctx, emailObj)
-	case plugins.MLClassifier:
-		result, err = p.Classify(ctx, emailObj)
-	default:
-		fmt.Printf("Plugin %s does not implement a known interface\n", pluginName)
-		os.Exit(1)
+
+	// Special handling for Lua plugins - use their declared interfaces
+	if luaPlugin, ok := plugin.(*plugins.LuaPlugin); ok {
+		interfaces := luaPlugin.GetInterfaces()
+		if len(interfaces) > 0 {
+			// Use the first declared interface
+			switch interfaces[0] {
+			case "ContentAnalyzer":
+				if contentAnalyzer, ok := plugin.(plugins.ContentAnalyzer); ok {
+					result, err = contentAnalyzer.AnalyzeContent(ctx, emailObj)
+				}
+			case "ReputationChecker":
+				if repChecker, ok := plugin.(plugins.ReputationChecker); ok {
+					result, err = repChecker.CheckReputation(ctx, emailObj)
+				}
+			case "AttachmentScanner":
+				if attScanner, ok := plugin.(plugins.AttachmentScanner); ok {
+					result, err = attScanner.ScanAttachments(ctx, emailObj.Attachments)
+				}
+			case "MLClassifier":
+				if mlClassifier, ok := plugin.(plugins.MLClassifier); ok {
+					result, err = mlClassifier.Classify(ctx, emailObj)
+				}
+			case "ExternalEngine":
+				if extEngine, ok := plugin.(plugins.ExternalEngine); ok {
+					result, err = extEngine.Analyze(ctx, emailObj)
+				}
+			case "CustomRuleEngine":
+				if ruleEngine, ok := plugin.(plugins.CustomRuleEngine); ok {
+					result, err = ruleEngine.EvaluateRules(ctx, emailObj)
+				}
+			default:
+				fmt.Printf("Unknown interface: %s\n", interfaces[0])
+				os.Exit(1)
+			}
+		} else {
+			fmt.Printf("Lua plugin %s has no declared interfaces\n", pluginName)
+			os.Exit(1)
+		}
+	} else {
+		// Standard Go plugin interface detection
+		switch p := plugin.(type) {
+		case plugins.ContentAnalyzer:
+			result, err = p.AnalyzeContent(ctx, emailObj)
+		case plugins.ExternalEngine:
+			result, err = p.Analyze(ctx, emailObj)
+		case plugins.CustomRuleEngine:
+			result, err = p.EvaluateRules(ctx, emailObj)
+		case plugins.ReputationChecker:
+			result, err = p.CheckReputation(ctx, emailObj)
+		case plugins.MLClassifier:
+			result, err = p.Classify(ctx, emailObj)
+		default:
+			fmt.Printf("Plugin %s does not implement a known interface\n", pluginName)
+			os.Exit(1)
+		}
 	}
 
 	execTime := time.Since(start)

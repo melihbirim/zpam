@@ -341,18 +341,37 @@ func (lp *LuaPlugin) convertLuaToResult(vm *lua.LState, luaResult lua.LValue) (*
 
 // Interface implementations - these check if the Lua script implements the required functions
 
+// hasInterface checks if this plugin declares support for a specific interface
+func (lp *LuaPlugin) hasInterface(interfaceName string) bool {
+	for _, iface := range lp.interfaces {
+		if iface == interfaceName {
+			return true
+		}
+	}
+	return false
+}
+
 // ContentAnalyzer implementation
 func (lp *LuaPlugin) AnalyzeContent(ctx context.Context, email *email.Email) (*PluginResult, error) {
+	if !lp.hasInterface("ContentAnalyzer") {
+		return nil, fmt.Errorf("plugin does not implement ContentAnalyzer interface")
+	}
 	return lp.executeFunction(ctx, "analyze_content", email)
 }
 
 // ReputationChecker implementation
 func (lp *LuaPlugin) CheckReputation(ctx context.Context, email *email.Email) (*PluginResult, error) {
+	if !lp.hasInterface("ReputationChecker") {
+		return nil, fmt.Errorf("plugin does not implement ReputationChecker interface")
+	}
 	return lp.executeFunction(ctx, "check_reputation", email)
 }
 
 // AttachmentScanner implementation
 func (lp *LuaPlugin) ScanAttachments(ctx context.Context, attachments []email.Attachment) (*PluginResult, error) {
+	if !lp.hasInterface("AttachmentScanner") {
+		return nil, fmt.Errorf("plugin does not implement AttachmentScanner interface")
+	}
 	// Create a fake email with just attachments for consistency
 	fakeEmail := &email.Email{Attachments: attachments}
 	return lp.executeFunction(ctx, "scan_attachments", fakeEmail)
@@ -360,6 +379,9 @@ func (lp *LuaPlugin) ScanAttachments(ctx context.Context, attachments []email.At
 
 // MLClassifier implementation
 func (lp *LuaPlugin) Classify(ctx context.Context, email *email.Email) (*PluginResult, error) {
+	if !lp.hasInterface("MLClassifier") {
+		return nil, fmt.Errorf("plugin does not implement MLClassifier interface")
+	}
 	return lp.executeFunction(ctx, "classify", email)
 }
 
@@ -370,6 +392,9 @@ func (lp *LuaPlugin) Train(ctx context.Context, emails []email.Email, labels []b
 
 // ExternalEngine implementation
 func (lp *LuaPlugin) Analyze(ctx context.Context, email *email.Email) (*PluginResult, error) {
+	if !lp.hasInterface("ExternalEngine") {
+		return nil, fmt.Errorf("plugin does not implement ExternalEngine interface")
+	}
 	return lp.executeFunction(ctx, "analyze", email)
 }
 
@@ -379,6 +404,9 @@ func (lp *LuaPlugin) GetEngineStats(ctx context.Context) (map[string]any, error)
 
 // CustomRuleEngine implementation
 func (lp *LuaPlugin) EvaluateRules(ctx context.Context, email *email.Email) (*PluginResult, error) {
+	if !lp.hasInterface("CustomRuleEngine") {
+		return nil, fmt.Errorf("plugin does not implement CustomRuleEngine interface")
+	}
 	return lp.executeFunction(ctx, "evaluate_rules", email)
 }
 

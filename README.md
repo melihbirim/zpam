@@ -226,15 +226,16 @@ Monitor ZPAM performance with live dashboards:
 
 ## 🔌 **Plugin System & Marketplace**
 
-ZPAM features the industry's most comprehensive plugin ecosystem for spam detection. Build, discover, and deploy plugins in minutes.
+ZPAM features the industry's most comprehensive plugin ecosystem for spam detection. Build, discover, and deploy plugins in minutes using **Go or Lua** - making it accessible to everyone from beginners to enterprise developers.
 
 ### **🚀 Plugin Development - From Idea to Production**
 
-Create production-ready plugins in under 10 lines of code:
+Create production-ready plugins in under 10 lines of code using **Go** or **Lua**:
 
+#### **🟦 Go Plugins (Enterprise Performance)**
 ```bash
-# 1. Generate plugin template
-./zpam plugins create my-domain-blocker content-analyzer --author "Your Name"
+# 1. Generate Go plugin template
+./zpam plugins create my-domain-blocker content-analyzer go --author "Your Name"
 
 # 2. Implement your logic (edit src/main.go)
 cd zpam-plugin-my-domain-blocker
@@ -248,9 +249,25 @@ cd zpam-plugin-my-domain-blocker
 ./zpam plugins publish --registry github
 ```
 
+#### **🌙 Lua Plugins (Rapid Development)**
+```bash
+# 1. Generate Lua plugin template
+./zpam plugins create my-keyword-filter content-analyzer lua
+
+# 2. Implement your logic (edit src/main.lua)
+cd zpam-plugin-my-keyword-filter
+
+# 3. Validate & test  
+./zpam plugins validate
+./zpam plugins test ../examples/spam.eml
+
+# 4. Deploy instantly (no compilation needed!)
+./zpam plugins install .
+```
+
 **🎯 6 Plugin Types Available:**
 - `content-analyzer` - Analyze email content and headers
-- `reputation-checker` - Check sender/domain reputation
+- `reputation-checker` - Check sender/domain reputation  
 - `attachment-scanner` - Scan email attachments
 - `ml-classifier` - Machine learning classification
 - `external-engine` - Integration with external services
@@ -335,10 +352,11 @@ ZPAM includes comprehensive plugin validation:
 - **Slack Alerts**: Real-time notifications
 - **Advanced Bayes**: Enhanced Bayesian filtering
 
-### **🏗️ Plugin Architecture**
+### **🏗️ Multi-Language Plugin Architecture**
 
-ZPAM plugins implement simple Go interfaces:
+ZPAM supports plugins in multiple languages with unified interfaces:
 
+#### **🟦 Go Plugins (Enterprise Performance)**
 ```go
 // ContentAnalyzer interface
 type ContentAnalyzer interface {
@@ -347,23 +365,46 @@ type ContentAnalyzer interface {
 
 // Example plugin result
 type Result struct {
-    Score       float64  // 0.0-1.0 (spam probability)
+    Score       float64  // 0.0-100.0 (spam score)
     Confidence  float64  // 0.0-1.0 (confidence level)
-    Explanation string   // Human-readable explanation
+    Rules       []string // Triggered rule descriptions
+    Metadata    map[string]string // Additional data
 }
 ```
 
+#### **🌙 Lua Plugins (Rapid Development)**
+```lua
+-- Main function that ZPAM calls
+function analyze_content(email)
+    local result = {
+        score = 0.0,       -- 0.0 to 100.0 (higher = more spam)
+        confidence = 0.7,  -- 0.0 to 1.0 (confidence in score)
+        rules = {},        -- Array of triggered rule descriptions
+        metadata = {}      -- Key-value pairs of additional information
+    }
+    
+    -- Your custom logic here
+    if zpam.contains(email.subject, "URGENT") then
+        result.score = 75.0
+        table.insert(result.rules, "Urgent keyword detected")
+    end
+    
+    return result
+end
+```
+
 **Key Features:**
+- 🌍 **Multi-Language Support** - Go for performance, Lua for simplicity
 - 🔧 **Template Generation** - Complete project structure in seconds
 - 🔒 **Security Sandboxing** - Isolated execution environment
 - 📝 **Auto Documentation** - Generated README and examples
 - 🎯 **Interface Compliance** - Type-safe plugin development
 - 🚀 **One-Command Publishing** - Deploy to GitHub or marketplace
+- ⚡ **Hot Reload** - Lua plugins update without restarts
 
-### **💡 Example: Domain Blocker Plugin**
+### **💡 Example: Real Working Plugins**
 
-A simple plugin that blocks specific domains with custom weights:
-
+#### **Go Domain Blocker Plugin**
 ```go
 // Generated template in src/main.go
 func main() {
@@ -375,11 +416,79 @@ func main() {
     result := PluginResult{
         Score:       score,
         Confidence:  0.9,
-        Explanation: fmt.Sprintf("Domain reputation check: %s", email.From),
+        Rules:       []string{fmt.Sprintf("Domain reputation: %s", email.From)},
+        Metadata:    map[string]string{"plugin": "domain-blocker"},
     }
     
     outputJSON(result)
 }
+```
+
+#### **Lua Spam Keywords Plugin**
+```lua
+-- Real working example from our test suite
+function analyze_content(email)
+    local spam_keywords = {"lottery", "congratulations", "urgent", "winner"}
+    local result = {
+        score = 0.0,
+        confidence = 0.8,
+        rules = {},
+        metadata = {
+            plugin_name = "lua-spam-keywords",
+            version = "1.0.0"
+        }
+    }
+    
+    -- Check subject and body for spam keywords
+    for _, keyword in ipairs(spam_keywords) do
+        if zpam.contains(email.subject, keyword) then
+            result.score = result.score + 30.0
+            table.insert(result.rules, "Spam keyword in subject")
+        end
+        if zpam.contains(email.body, keyword) then
+            result.score = result.score + 25.0  
+            table.insert(result.rules, "Spam keyword in body")
+        end
+    end
+    
+    return result
+end
+```
+
+**🎯 Real Performance Results:**
+```bash
+# Testing the Lua spam keywords plugin
+./zpam plugins test-one lua-spam-keywords test-spam.eml
+
+✓ lua-spam-keywords    Score: 130.00  Confidence: 0.80  Time: 321µs
+  Rules: [Spam keyword in subject, Spam keyword in body]
+```
+
+#### **🛠️ Lua Plugin API**
+
+Lua plugins have access to powerful ZPAM API functions:
+
+```lua
+-- String utilities
+zpam.contains(text, pattern)        -- Case-insensitive substring search
+zpam.regex_match(text, pattern)     -- Regular expression matching
+
+-- Email utilities  
+zpam.domain_from_email(email_addr)  -- Extract domain from email address
+
+-- Logging
+zpam.log(message)                   -- Log messages for debugging
+```
+
+**Email Data Structure Available to Lua:**
+```lua
+-- The email parameter contains:
+email.from        -- Sender email address
+email.to          -- Recipient email address (comma-separated)
+email.subject     -- Email subject line
+email.body        -- Plain text email body
+email.headers     -- Email headers (table)
+email.attachments -- Email attachments (table)
 ```
 
 See **[Plugin Development Guide](docs/plugin-development.md)** for complete examples and tutorials.

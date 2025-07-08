@@ -48,9 +48,16 @@ func (pl *PluginLoader) LoadFromDirectory() error {
 
 		// Check for Lua plugins
 		if strings.HasSuffix(path, "main.lua") {
-			// Look for manifest in parent directory
+			// Look for manifest in plugin directory (could be current dir or parent)
 			pluginDir := filepath.Dir(path)
 			manifestPath := filepath.Join(pluginDir, "zpam-plugin.yaml")
+
+			// If not found in script dir, try parent directory
+			if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+				pluginDir = filepath.Dir(pluginDir)
+				manifestPath = filepath.Join(pluginDir, "zpam-plugin.yaml")
+			}
+
 			if _, err := os.Stat(manifestPath); err == nil {
 				return pl.loadLuaPlugin(pluginDir)
 			}

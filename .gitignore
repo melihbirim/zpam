@@ -27,4 +27,28 @@ go.work.sum
 # env file
 .env
 
+# ZPAM specific
+zpam
+zpam-test
+zpam-milter
+spam-filter
+
+# Test files
+test-*.eml
+*.eml.test
+
+# Plugin development artifacts
+zpam-plugin-*/
+!plugins/
+
+# Model and training artifacts
+*.json.backup
+benchmark_results_*.txt
+sessions/
+models/*.backup
+
+# Logs
+logs/
+*.log
+
 
