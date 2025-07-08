@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 var filterCmd = &cobra.Command{
 	Use:   "filter",
 	Short: "Filter emails for spam",
-	Long:  `Process emails and filter spam based on ZPO's fast algorithm`,
+	Long:  `Process emails and filter spam based on ZPAM's fast algorithm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if inputPath == "" {
 			return fmt.Errorf("input path is required")
@@ -37,7 +37,7 @@ var filterCmd = &cobra.Command{
 		}
 
 		spamFilter := filter.NewSpamFilterWithConfig(cfg)
-		
+
 		// Process emails
 		start := time.Now()
 		results, err := spamFilter.ProcessEmails(inputPath, outputPath, spamPath, threshold)
@@ -47,14 +47,14 @@ var filterCmd = &cobra.Command{
 		duration := time.Since(start)
 
 		// Print results
-		fmt.Printf("ZPO Processing Complete!\n")
+		fmt.Printf("ZPAM Processing Complete!\n")
 		fmt.Printf("Emails processed: %d\n", results.Total)
 		fmt.Printf("Spam detected: %d\n", results.Spam)
 		fmt.Printf("Ham (clean): %d\n", results.Ham)
-		fmt.Printf("Average processing time: %.2fms per email\n", 
+		fmt.Printf("Average processing time: %.2fms per email\n",
 			float64(duration.Nanoseconds())/float64(results.Total)/1e6)
 		fmt.Printf("Total time: %v\n", duration)
-		
+
 		if configFile != "" {
 			fmt.Printf("Configuration: %s\n", configFile)
 		}
@@ -69,6 +69,6 @@ func init() {
 	filterCmd.Flags().StringVarP(&spamPath, "spam", "s", "", "Spam directory for filtered emails")
 	filterCmd.Flags().IntVarP(&threshold, "threshold", "t", 4, "Spam threshold (4-5 = spam)")
 	filterCmd.Flags().StringVarP(&configFile, "config", "c", "", "Configuration file path")
-	
+
 	filterCmd.MarkFlagRequired("input")
-} 
+}

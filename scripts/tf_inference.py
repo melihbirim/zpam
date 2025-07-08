@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-TensorFlow Inference Script for ZPO Spam Filter
+TensorFlow Inference Script for ZPAM Spam Filter
 
 This script loads a TensorFlow model and performs inference for spam classification.
-It can be used as a backend for the ZPO TensorFlow plugin.
+It can be used as a backend for the ZPAM TensorFlow plugin.
 
 Usage:
     python3 tf_inference.py --model <model_path> --input <input_file> --output json
@@ -203,7 +203,7 @@ def create_sample_model(model_path: str) -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='TensorFlow Inference for ZPO')
+    parser = argparse.ArgumentParser(description='TensorFlow Inference for ZPAM')
     parser.add_argument('--model', required=True, help='Path to TensorFlow model')
     parser.add_argument('--input', required=True, help='Input JSON file with features')
     parser.add_argument('--output', default='json', choices=['json', 'text'], 

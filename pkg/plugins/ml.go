@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 )
 
 // MLPlugin provides machine learning-based spam detection

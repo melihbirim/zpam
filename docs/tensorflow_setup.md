@@ -1,6 +1,6 @@
-# TensorFlow Integration for ZPO
+# TensorFlow Integration for ZPAM
 
-ZPO includes comprehensive TensorFlow support for advanced spam classification using deep learning models.
+ZPAM includes comprehensive TensorFlow support for advanced spam classification using deep learning models.
 
 ## Setup
 
@@ -54,7 +54,7 @@ docker run -p 8501:8501 \
   --model_config_file=/models/models.config
 
 # Test the plugin
-./zpo plugins test examples/test_headers.eml
+./zpam plugins test examples/test_headers.eml
 ```
 
 ### 2. Python Script (Development)
@@ -166,7 +166,7 @@ model.fit(X_train, y_train,
           validation_data=(X_val, y_val),
           epochs=100, batch_size=32)
 
-# Save for ZPO
+# Save for ZPAM
 tf.saved_model.save(model, 'models/spam_classifier')
 
 # Save metadata
@@ -181,13 +181,13 @@ with open('models/spam_classifier/version.txt', 'w') as f:
 
 ```bash
 # Test with sample email
-./zpo plugins test examples/test_headers.eml
+./zpam plugins test examples/test_headers.eml
 
 # Test specific plugin
-./zpo plugins test-one machine_learning examples/test_headers.eml
+./zpam plugins test-one machine_learning examples/test_headers.eml
 
 # Plugin statistics
-./zpo plugins stats
+./zpam plugins stats
 ```
 
 ## Troubleshooting
@@ -251,10 +251,10 @@ machine_learning_v2:
 ### Monitoring
 ```bash
 # Check model performance
-./zpo plugins stats | grep machine_learning
+./zpam plugins stats | grep machine_learning
 
 # Detailed logs
-tail -f logs/zpo.log | grep tensorflow
+tail -f logs/zpam.log | grep tensorflow
 ```
 
 ## Integration Examples
@@ -282,6 +282,6 @@ docker run -d --name tf-serving \
   tensorflow/serving:latest \
   --model_config_file=/models/models.config
 
-# Configure ZPO
-./zpo milter --config config-production.yaml
+# Configure ZPAM
+./zpam milter --config config-production.yaml
 ``` 

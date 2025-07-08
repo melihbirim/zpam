@@ -1,11 +1,11 @@
-# 🫏 ZPO Milter Integration Testing
+# 🫏 ZPAM Milter Integration Testing
 
-This directory contains comprehensive testing scripts for ZPO + Postfix milter integration.
+This directory contains comprehensive testing scripts for ZPAM + Postfix milter integration.
 
 ## 📁 Files
 
-- **`test_zpo_postfix.sh`** - Complete integration test script (setup + test + cleanup)
-- **`send_test_emails.sh`** - Simple script to send 10 test emails (requires ZPO + Postfix running)
+- **`test_zpam_postfix.sh`** - Complete integration test script (setup + test + cleanup)
+- **`send_test_emails.sh`** - Simple script to send 10 test emails (requires ZPAM + Postfix running)
 - **Training data** - Located in `../training-data/` with organized spam and ham email samples
 - **`README.md`** - This documentation
 
@@ -17,13 +17,13 @@ Run the full integration test that automatically sets up, tests, and cleans up:
 
 ```bash
 cd milter
-./test_zpo_postfix.sh
+./test_zpam_postfix.sh
 ```
 
 This script will:
-1. ✅ Check prerequisites (ZPO binary, Postfix, Python3)
+1. ✅ Check prerequisites (ZPAM binary, Postfix, Python3)
 2. ⚙️  Configure test environment
-3. 🔧 Start ZPO milter server
+3. 🔧 Start ZPAM milter server
 4. 📧 Configure and start Postfix with milter integration
 5. 📨 Send 10 test emails (5 spam levels, 2 emails each)
 6. 📊 Analyze results and show detailed scoring
@@ -31,7 +31,7 @@ This script will:
 
 ### Option 2: Standalone Email Testing
 
-If you already have ZPO milter and Postfix running:
+If you already have ZPAM milter and Postfix running:
 
 ```bash
 cd milter
@@ -54,32 +54,32 @@ Test emails covering all spam levels:
 | **4** | 2 | Likely Spam | Phishing attempts, get-rich-quick schemes |
 | **5** | 2 | Definitely Spam | Lottery scams, illegal pharmacy ads |
 
-### Expected ZPO Scores
+### Expected ZPAM Scores
 
 With properly tuned SpamAssassin-inspired settings:
 
-- **Level 1 emails**: Raw score 0.5-5.0 → ZPO rating 1/5 (Clean)
-- **Level 2 emails**: Raw score 5.0-15.0 → ZPO rating 2/5 (Probably Clean)
-- **Level 3 emails**: Raw score 15.0-35.0 → ZPO rating 3/5 (Possibly Spam)
-- **Level 4 emails**: Raw score 35.0-75.0 → ZPO rating 4/5 (Likely Spam)
-- **Level 5 emails**: Raw score 75.0+ → ZPO rating 5/5 (Definitely Spam)
+- **Level 1 emails**: Raw score 0.5-5.0 → ZPAM rating 1/5 (Clean)
+- **Level 2 emails**: Raw score 5.0-15.0 → ZPAM rating 2/5 (Probably Clean)
+- **Level 3 emails**: Raw score 15.0-35.0 → ZPAM rating 3/5 (Possibly Spam)
+- **Level 4 emails**: Raw score 35.0-75.0 → ZPAM rating 4/5 (Likely Spam)
+- **Level 5 emails**: Raw score 75.0+ → ZPAM rating 5/5 (Definitely Spam)
 
 ## 🔍 Verification
 
 After running tests, check results:
 
 ```bash
-# View received emails with ZPO headers
+# View received emails with ZPAM headers
 tail -n 100 /var/mail/$USER
 
-# Check for ZPO processing headers
-grep "X-ZPO-" /var/mail/$USER
+# Check for ZPAM processing headers
+grep "X-ZPAM-" /var/mail/$USER
 
 # View detailed scoring
-grep -A3 -B1 "X-ZPO-Status:" /var/mail/$USER
+grep -A3 -B1 "X-ZPAM-Status:" /var/mail/$USER
 
-# Check ZPO milter logs
-tail -f /tmp/zpo_milter.log
+# Check ZPAM milter logs
+tail -f /tmp/zpam_milter.log
 
 # Check Postfix logs (macOS)
 tail -f /var/log/mail.log
@@ -90,17 +90,17 @@ tail -f /var/log/mail.log
 Each processed email should contain:
 
 ```
-X-ZPO-Status: Clean|Spam
-X-ZPO-Score: 1.23
-X-ZPO-Rating: 2/5
-X-ZPO-Features: keywords:0.45,headers:0.32,domain:0.46
+X-ZPAM-Status: Clean|Spam
+X-ZPAM-Score: 1.23
+X-ZPAM-Rating: 2/5
+X-ZPAM-Features: keywords:0.45,headers:0.32,domain:0.46
 ```
 
 ## 📋 Prerequisites
 
 ### Required Software
 
-- **Go** (to build ZPO binary)
+- **Go** (to build ZPAM binary)
 - **Postfix** (mail server)
 - **sendmail or telnet** (for sending test emails)
 - **netcat** (connectivity testing)
@@ -123,16 +123,16 @@ sudo apt install postfix netcat-openbsd telnet sendmail
 sudo yum install postfix nmap-ncat telnet sendmail
 ```
 
-### Build ZPO
+### Build ZPAM
 
 ```bash
-cd /path/to/zpo
-go build -o zpo .
+cd /path/to/zpam
+go build -o zpam .
 ```
 
 ## ⚙️ Configuration
 
-### ZPO Config (`config.yaml`)
+### ZPAM Config (`config.yaml`)
 
 Ensure milter is enabled:
 
@@ -167,9 +167,9 @@ milter_protocol = 6
 
 ## 🧪 Manual Testing
 
-### 1. Start ZPO Milter
+### 1. Start ZPAM Milter
 ```bash
-./zpo milter --debug
+./zpam milter --debug
 ```
 
 ### 2. Configure and Start Postfix
@@ -193,7 +193,7 @@ nc -z 127.0.0.1 25
 ./send_test_emails.sh
 ```
 
-> **Note**: Test emails are sourced from `../training-data/` which can also be used with ZPO's enhanced training system: `./zpo train --auto-discover training-data`
+> **Note**: Test emails are sourced from `../training-data/` which can also be used with ZPAM's enhanced training system: `./zpam train --auto-discover training-data`
 
 ### 5. Check Results
 ```bash
@@ -204,9 +204,9 @@ tail -n 50 /var/mail/$USER
 
 ### Common Issues
 
-**1. "ZPO binary not found"**
+**1. "ZPAM binary not found"**
 ```bash
-cd .. && go build -o zpo .
+cd .. && go build -o zpam .
 ```
 
 **2. "Postfix is not installed"**
@@ -235,20 +235,20 @@ sudo postfix start
 
 **5. "Connection refused on port 7357"**
 ```bash
-# Check if ZPO milter is running
-ps aux | grep "zpo milter"
+# Check if ZPAM milter is running
+ps aux | grep "zpam milter"
 
-# Start ZPO milter
-./zpo milter --debug
+# Start ZPAM milter
+./zpam milter --debug
 ```
 
-**6. "No X-ZPO headers in emails"**
+**6. "No X-ZPAM headers in emails"**
 ```bash
 # Check milter configuration in Postfix
 postconf | grep milter
 
-# Check ZPO milter logs
-tail -f /tmp/zpo_milter.log
+# Check ZPAM milter logs
+tail -f /tmp/zpam_milter.log
 ```
 
 ### Debug Commands
@@ -264,7 +264,7 @@ mailq
 echo "Test" | mail -s "Test" $USER
 
 # Monitor logs in real-time
-tail -f /var/log/mail.log /tmp/zpo_milter.log
+tail -f /var/log/mail.log /tmp/zpam_milter.log
 ```
 
 ## 🎯 Expected Results
@@ -272,12 +272,12 @@ tail -f /var/log/mail.log /tmp/zpo_milter.log
 ### Successful Test Output
 
 ```
-🫏 ZPO + Postfix Integration Test Suite
+🫏 ZPAM + Postfix Integration Test Suite
 ========================================
 ✅ Prerequisites check passed
 ✅ Test environment setup complete  
-✅ ZPO milter server started (PID: 12345)
-✅ Postfix configured and started with ZPO milter integration
+✅ ZPAM milter server started (PID: 12345)
+✅ Postfix configured and started with ZPAM milter integration
 
 📧 Email 1/10:
 ✅ Sent Level 1 (Clean - Business): Weekly Team Meeting Notes...
@@ -290,18 +290,18 @@ tail -f /var/log/mail.log /tmp/zpo_milter.log
 📊 Test Results Summary:
 ========================
 📧 Emails received: 10/10
-🏷️  ZPO headers added: 10/10
+🏷️  ZPAM headers added: 10/10
 ✅ Clean emails: 4
 🚨 Spam emails: 6
 
-✅ All emails processed successfully with ZPO headers!
+✅ All emails processed successfully with ZPAM headers!
 ```
 
 ## 📊 Performance Metrics
 
 - **Email Processing**: < 5ms per email
 - **Milter Response Time**: < 1ms average
-- **Memory Usage**: ~10MB for ZPO milter
+- **Memory Usage**: ~10MB for ZPAM milter
 - **CPU Usage**: < 1% during normal operation
 
 ## 🔧 Advanced Configuration
@@ -321,7 +321,7 @@ spam_filter:
 
 ### Custom Email Templates
 
-Modify `test_zpo_emails.py` to add your own test cases:
+Modify `test_zpam_emails.py` to add your own test cases:
 
 ```python
 custom_email = {
@@ -335,6 +335,6 @@ custom_email = {
 
 ## 📚 References
 
-- [ZPO Documentation](../README.md)
+- [ZPAM Documentation](../README.md)
 - [Postfix Milter Documentation](http://www.postfix.org/MILTER_README.html)
 - [SpamAssassin Scoring Guide](https://spamassassin.apache.org/full/3.4.x/doc/Mail_SpamAssassin_Conf.html) 

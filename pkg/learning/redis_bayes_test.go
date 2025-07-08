@@ -11,7 +11,7 @@ import (
 // TestRedisConfig for testing
 var testRedisConfig = &RedisConfig{
 	RedisURL:        "redis://localhost:6379",
-	KeyPrefix:       "zpo:test:bayes",
+	KeyPrefix:       "zpam:test:bayes",
 	DatabaseNum:     1, // Use separate database for testing
 	OSBWindowSize:   5,
 	MinTokenLength:  3,

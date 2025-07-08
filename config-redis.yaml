@@ -81,7 +81,7 @@ learning:
   
   # File backend settings (fallback)
   file:
-    model_path: "zpo-model.json"
+    model_path: "zpam-model.json"
     min_word_length: 3
     max_word_length: 20
     case_sensitive: false
@@ -96,7 +96,7 @@ learning:
   # Redis backend settings (primary)
   redis:
     redis_url: "redis://redis:6379"
-    key_prefix: "zpo:bayes"
+    key_prefix: "zpam:bayes"
     database_num: 0
     
     # Rspamd-style OSB tokenization
@@ -166,7 +166,7 @@ milter:
   reject_message: "Message rejected as spam"
   quarantine_message: "Message quarantined for review"
   add_spam_headers: true
-  spam_header_prefix: "X-ZPO-"
+  spam_header_prefix: "X-ZPAM-"
 
 plugins:
   enabled: true

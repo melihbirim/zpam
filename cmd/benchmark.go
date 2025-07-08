@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
 var (
@@ -48,7 +48,7 @@ var benchmarkCmd = &cobra.Command{
 			return fmt.Errorf("no email files found in %s", benchmarkInput)
 		}
 
-		fmt.Printf("🚀 ZPO Performance Benchmark\n")
+		fmt.Printf("🚀 ZPAM Performance Benchmark\n")
 		fmt.Printf("📁 Input directory: %s\n", benchmarkInput)
 		fmt.Printf("📧 Email files found: %d\n", len(emailFiles))
 		fmt.Printf("🔄 Benchmark runs: %d\n", benchmarkRuns)

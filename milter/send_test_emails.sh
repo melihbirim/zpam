@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 🫏 ZPO Email Sender Script
-# Simple script to send 10 test emails (5 clean, 5 spam) to test ZPO milter
+# 🫏 ZPAM Email Sender Script
+# Simple script to send 10 test emails (5 clean, 5 spam) to test ZPAM milter
 
 set -e
 
@@ -14,7 +14,7 @@ NC='\033[0m'
 EMAILS_DIR="../training-data"
 SUCCESSFUL_SENDS=0
 
-echo -e "${BLUE}🫏 ZPO Email Test Suite - 10 Emails (5 Clean, 5 Spam)${NC}"
+echo -e "${BLUE}🫏 ZPAM Email Test Suite - 10 Emails (5 Clean, 5 Spam)${NC}"
 echo "====================================================="
 
 # Check prerequisites
@@ -112,7 +112,7 @@ echo "   Emails sent: $SUCCESSFUL_SENDS/10"
 echo "   Clean emails: 5 (01-05)"
 echo "   Spam emails: 5 (06-10)"
 echo
-echo -e "${GREEN}🔍 Check /var/mail/\$USER for X-ZPO-* headers${NC}"
+echo -e "${GREEN}🔍 Check /var/mail/\$USER for X-ZPAM-* headers${NC}"
 
 if [[ $SUCCESSFUL_SENDS -eq 10 ]]; then
     echo -e "${GREEN}🎉 All emails sent successfully!${NC}"

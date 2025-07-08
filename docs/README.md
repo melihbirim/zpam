@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains project-specific documentation for ZPO.
+This directory contains project-specific documentation for ZPAM.
 
 ## 📚 Available Documentation
 

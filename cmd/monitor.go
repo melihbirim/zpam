@@ -28,7 +28,7 @@ var (
 var monitorCmd = &cobra.Command{
 	Use:   "monitor",
 	Short: "Live performance monitoring dashboard",
-	Long: `Real-time ZPO performance monitoring with:
+	Long: `Real-time ZPAM performance monitoring with:
 - Live service status and health metrics
 - Email processing statistics and trends
 - Resource usage (memory, CPU, connections)
@@ -116,7 +116,7 @@ func runMonitor(cmd *cobra.Command, args []string) error {
 		cancel()
 	}()
 
-	fmt.Printf("🫏 ZPO Live Performance Monitor\n")
+	fmt.Printf("🫏 ZPAM Live Performance Monitor\n")
 	fmt.Printf("═══════════════════════════════════════════════════════\n")
 	fmt.Printf("Press Ctrl+C to exit | Refresh every %ds\n\n", monitorInterval)
 
@@ -203,7 +203,7 @@ func collectServiceMetrics() ServiceMetrics {
 
 	// Try to find running service
 	for _, mode := range []string{"milter", "standalone"} {
-		pidFile := fmt.Sprintf("zpo-%s.pid", mode)
+		pidFile := fmt.Sprintf("zpam-%s.pid", mode)
 		if data, err := os.ReadFile(pidFile); err == nil {
 			if pidVal, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil {
 				if process, err := os.FindProcess(pidVal); err == nil {
@@ -316,7 +316,7 @@ func generateAlerts(data *MonitoringData) []Alert {
 		alerts = append(alerts, Alert{
 			Type:      "service",
 			Severity:  "critical",
-			Message:   "ZPO service is not running",
+			Message:   "ZPAM service is not running",
 			Timestamp: time.Now(),
 		})
 	}
@@ -346,7 +346,7 @@ func generateAlerts(data *MonitoringData) []Alert {
 
 func printMonitoringDashboard(data *MonitoringData, history []MonitoringData) {
 	if !monitorCompact {
-		fmt.Printf("🫏 ZPO Live Performance Monitor - %s\n", data.Timestamp.Format("15:04:05"))
+		fmt.Printf("🫏 ZPAM Live Performance Monitor - %s\n", data.Timestamp.Format("15:04:05"))
 		fmt.Printf("═══════════════════════════════════════════════════════\n\n")
 	}
 

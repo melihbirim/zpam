@@ -97,7 +97,7 @@ learning:
     enabled: false
     backend: redis
     file:
-        model_path: zpo-model.json
+        model_path: zpam-model.json
         min_word_length: 3
         max_word_length: 20
         case_sensitive: false
@@ -110,7 +110,7 @@ learning:
         max_vocabulary_size: 10000
     redis:
         redis_url: redis://localhost:6379
-        key_prefix: 'zpo:'
+        key_prefix: 'zpam:'
         database_num: 0
         osb_window_size: 5
         min_token_length: 3
@@ -169,7 +169,7 @@ milter:
     reject_message: ""
     quarantine_message: ""
     add_spam_headers: true
-    spam_header_prefix: X-ZPO-
+    spam_header_prefix: X-ZPAM-
 plugins:
     enabled: false
     timeout_ms: 5000

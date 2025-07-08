@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🧪 ZPO Redis Bayesian Filter Test Suite"
+echo "🧪 ZPAM Redis Bayesian Filter Test Suite"
 echo "========================================"
 
 # Colors for output
@@ -28,7 +28,7 @@ check_redis() {
 
 # Build the project
 build_project() {
-    echo -e "${BLUE}Building ZPO...${NC}"
+    echo -e "${BLUE}Building ZPAM...${NC}"
     if go build -v; then
         echo -e "${GREEN}✅ Build successful${NC}"
     else
@@ -66,7 +66,7 @@ test_sample_emails() {
     
     # Clean any existing test data
     echo "🧹 Cleaning test data..."
-    redis-cli del "zpo:test:*" >/dev/null 2>&1 || true
+    redis-cli del "zpam:test:*" >/dev/null 2>&1 || true
     
     # Create test email directories
     mkdir -p test_emails/spam test_emails/ham
@@ -149,7 +149,7 @@ EOF
     
     # Train with Redis backend
     echo "🧠 Training with Redis backend..."
-    ./zpo train --config config-redis.yaml --spam-dir test_emails/spam --ham-dir test_emails/ham --verbose
+    ./zpam train --config config-redis.yaml --spam-dir test_emails/spam --ham-dir test_emails/ham --verbose
     
     # Test classification
     echo "🔍 Testing classification..."
@@ -168,7 +168,7 @@ Visit: http://suspicious-link.com
 EOF
 
     echo "📧 Testing spam email classification:"
-    ./zpo test test_email.eml --config config-redis.yaml
+    ./zpam test test_email.eml --config config-redis.yaml
     
     # Clean up
     rm -rf test_emails test_email.eml
@@ -181,7 +181,7 @@ test_multi_instance() {
     echo "========================================"
     
     # Clean Redis test data
-    redis-cli del "zpo:test:*" >/dev/null 2>&1 || true
+    redis-cli del "zpam:test:*" >/dev/null 2>&1 || true
     
     echo "🚀 Starting instance 1 training..."
     echo "Instance 1 training spam..." &
@@ -204,7 +204,7 @@ performance_test() {
     echo "========================================"
     
     # Clean test data
-    redis-cli del "zpo:test:*" >/dev/null 2>&1 || true
+    redis-cli del "zpam:test:*" >/dev/null 2>&1 || true
     
     echo "📊 Performance metrics:"
     echo "----------------------"
@@ -245,18 +245,18 @@ inspect_redis_data() {
     echo "📊 Redis key statistics:"
     
     # Count keys
-    total_keys=$(redis-cli keys "zpo:*" | wc -l)
-    echo "   Total ZPO keys: $total_keys"
+    total_keys=$(redis-cli keys "zpam:*" | wc -l)
+    echo "   Total ZPAM keys: $total_keys"
     
     # Show sample keys
     echo "   Sample keys:"
-    redis-cli keys "zpo:*" | head -5 | while read key; do
+    redis-cli keys "zpam:*" | head -5 | while read key; do
         echo "     - $key"
     done
     
     # User statistics
     echo "📈 User statistics:"
-    redis-cli hgetall "zpo:bayes:user:global" 2>/dev/null | while read -r field; do
+    redis-cli hgetall "zpam:bayes:user:global" 2>/dev/null | while read -r field; do
         read -r value
         echo "     $field: $value"
     done || echo "     No global user stats found"
@@ -267,8 +267,8 @@ inspect_redis_data() {
 # Cleanup function
 cleanup() {
     echo -e "${YELLOW}🧹 Cleaning up test data...${NC}"
-    redis-cli del "zpo:test:*" >/dev/null 2>&1 || true
-    rm -f zpo test_email.eml
+    redis-cli del "zpam:test:*" >/dev/null 2>&1 || true
+    rm -f zpam test_email.eml
     rm -rf test_emails
     echo -e "${GREEN}✅ Cleanup completed${NC}"
 }

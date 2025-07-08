@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
 var (
@@ -52,7 +52,7 @@ var (
 
 var trainCmd = &cobra.Command{
 	Use:   "train",
-	Short: "Enhanced training system for ZPO spam detection",
+	Short: "Enhanced training system for ZPAM spam detection",
 	Long: `Advanced training system with multiple input sources and analytics:
 
 Input Sources:
@@ -73,7 +73,7 @@ Advanced Features:
   --balanced              Ensure balanced spam/ham training data
   --progress              Live progress tracking with charts
 
-Perfect for getting ZPO from 0% to 95%+ accuracy quickly.`,
+Perfect for getting ZPAM from 0% to 95%+ accuracy quickly.`,
 	RunE: runTraining,
 }
 
@@ -233,7 +233,7 @@ func loadTrainingConfig() (*config.Config, error) {
 }
 
 func printTrainingHeader(cfg *config.Config, session *TrainingSession) {
-	fmt.Printf("🫏 ZPO Enhanced Training System\n")
+	fmt.Printf("🫏 ZPAM Enhanced Training System\n")
 	fmt.Printf("═══════════════════════════════════════════════════════\n")
 	fmt.Printf("🔧 Backend: %s\n", strings.Title(cfg.Learning.Backend))
 	fmt.Printf("📅 Session: %s\n", session.ID)

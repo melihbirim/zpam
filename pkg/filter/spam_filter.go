@@ -11,12 +11,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/headers"
-	"github.com/zpo/spam-filter/pkg/learning"
-	"github.com/zpo/spam-filter/pkg/plugins"
-	"github.com/zpo/spam-filter/pkg/tracker"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/headers"
+	"github.com/zpam/spam-filter/pkg/learning"
+	"github.com/zpam/spam-filter/pkg/plugins"
+	"github.com/zpam/spam-filter/pkg/tracker"
 )
 
 // FilterResults contains the results of email filtering
@@ -26,7 +26,7 @@ type FilterResults struct {
 	Ham   int
 }
 
-// SpamFilter implements the ZPO spam detection algorithm
+// SpamFilter implements the ZPAM spam detection algorithm
 type SpamFilter struct {
 	parser        *email.Parser
 	config        *config.Config
@@ -614,7 +614,7 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 		debugScores = append(debugScores, fmt.Sprintf("%s:%.2f", featureScore.Name, featureScore.Score))
 	}
 
-	// Run plugins if enabled (parallel with ZPO's native scoring)
+	// Run plugins if enabled (parallel with ZPAM's native scoring)
 	var pluginScore float64
 	if sf.pluginManager != nil && sf.config != nil && sf.config.Plugins.Enabled {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(sf.config.Plugins.Timeout)*time.Millisecond)
@@ -645,12 +645,12 @@ func (sf *SpamFilter) calculateSpamScore(email *email.Email) float64 {
 		}
 	}
 
-	// Combine ZPO native score with plugin score
+	// Combine ZPAM native score with plugin score
 	finalScore := totalScore + pluginScore
 
 	// Log debug info if debugging enabled
 	if sf.config != nil && sf.config.Logging.Level == "debug" {
-		fmt.Printf("[DEBUG FINAL SCORE] From:%s ZPO:%.2f Plugin:%.2f Final:%.2f [%s]\n",
+		fmt.Printf("[DEBUG FINAL SCORE] From:%s ZPAM:%.2f Plugin:%.2f Final:%.2f [%s]\n",
 			email.From, totalScore, pluginScore, finalScore, strings.Join(debugScores, " "))
 	}
 

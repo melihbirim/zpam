@@ -58,7 +58,7 @@ type RedisConfig struct {
 func DefaultRedisConfig() *RedisConfig {
 	return &RedisConfig{
 		RedisURL:        "redis://localhost:6379",
-		KeyPrefix:       "zpo:bayes",
+		KeyPrefix:       "zpam:bayes",
 		DatabaseNum:     0,
 		OSBWindowSize:   5,
 		MinTokenLength:  3,

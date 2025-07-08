@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 )
 
 // RspamdPlugin integrates with Rspamd for advanced spam detection
@@ -227,7 +227,7 @@ func (r *RspamdPlugin) formatEmailForRspamd(email *email.Email) ([]byte, error) 
 
 	// Add message ID if missing
 	if _, exists := email.Headers["Message-ID"]; !exists {
-		content.WriteString(fmt.Sprintf("Message-ID: <%d@zpo.local>\n", time.Now().Unix()))
+		content.WriteString(fmt.Sprintf("Message-ID: <%d@zpam.local>\n", time.Now().Unix()))
 	}
 
 	// Empty line separating headers from body

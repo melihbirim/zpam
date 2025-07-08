@@ -27,9 +27,9 @@ test_results/
 *.prof
 
 # Ignore build artifacts
-zpo
-zpo-milter
-zpo-test
+zpam
+zpam-milter
+zpam-test
 *.exe
 *.dll
 *.so
@@ -60,7 +60,7 @@ config-cached.yaml
 examples/
 milter/emails/
 milter/send_test_emails.sh
-milter/test_zpo_postfix.sh
+milter/test_zpam_postfix.sh
 
 # Node modules if any
 node_modules/

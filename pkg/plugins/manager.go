@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/email"
 )
 
 // DefaultPluginManager implements PluginManager interface

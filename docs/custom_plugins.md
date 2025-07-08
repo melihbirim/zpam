@@ -1,10 +1,10 @@
-# Custom Plugin Development for ZPO
+# Custom Plugin Development for ZPAM
 
-ZPO provides a powerful plugin system that allows developers to create custom spam detection modules. This guide covers everything you need to know to develop, test, and deploy custom plugins.
+ZPAM provides a powerful plugin system that allows developers to create custom spam detection modules. This guide covers everything you need to know to develop, test, and deploy custom plugins.
 
 ## Plugin Architecture
 
-ZPO uses an interface-based plugin system with multiple specialized interfaces:
+ZPAM uses an interface-based plugin system with multiple specialized interfaces:
 
 - **ContentAnalyzer**: Analyze email content for spam indicators
 - **ReputationChecker**: Check sender/domain/URL reputation
@@ -27,7 +27,7 @@ import (
     "fmt"
     "time"
     
-    "github.com/zpo/spam-filter/pkg/email"
+    "github.com/zpam/spam-filter/pkg/email"
 )
 
 type YourPlugin struct {
@@ -448,7 +448,7 @@ import (
     "testing"
     "time"
     
-    "github.com/zpo/spam-filter/pkg/email"
+    "github.com/zpam/spam-filter/pkg/email"
 )
 
 func TestYourPlugin_AnalyzeContent(t *testing.T) {
@@ -516,10 +516,10 @@ From: test@example.com
 This is a test email body.' > test_email.eml
 
 # Test your plugin specifically
-./zpo plugins test-one your_plugin test_email.eml
+./zpam plugins test-one your_plugin test_email.eml
 
 # Test with all plugins
-./zpo plugins test test_email.eml
+./zpam plugins test test_email.eml
 ```
 
 ### Performance Testing
@@ -686,14 +686,14 @@ func (hp *HTTPAPIPlugin) Analyze(ctx context.Context, email *email.Email) (*Plug
 ### Building with Custom Plugins
 
 ```bash
-# Build ZPO with your custom plugins
-go build -o zpo .
+# Build ZPAM with your custom plugins
+go build -o zpam .
 
 # Test configuration
-./zpo plugins list
+./zpam plugins list
 
 # Test your plugin
-./zpo plugins test-one your_plugin examples/test.eml
+./zpam plugins test-one your_plugin examples/test.eml
 ```
 
 ### Production Deployment
@@ -717,10 +717,10 @@ plugins:
 
 ```bash
 # Check plugin status
-./zpo plugins stats
+./zpam plugins stats
 
 # Monitor plugin performance
-tail -f logs/zpo.log | grep your_plugin
+tail -f logs/zpam.log | grep your_plugin
 
 # Health checks
 curl http://localhost:8080/health/plugins
@@ -746,4 +746,4 @@ logging:
     your_plugin: debug
 ```
 
-This comprehensive guide should help you create powerful, efficient, and maintainable custom plugins for ZPO! 🚀 
+This comprehensive guide should help you create powerful, efficient, and maintainable custom plugins for ZPAM! 🚀 

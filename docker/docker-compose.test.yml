@@ -3,7 +3,7 @@ version: '3.8'
 services:
   redis:
     image: redis:7-alpine
-    container_name: zpo-test-redis
+    container_name: zpam-test-redis
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
@@ -15,11 +15,11 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - zpo-test
+      - zpam-test
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: zpo-redis-ui
+    container_name: zpam-redis-ui
     ports:
       - "8081:8081"
     environment:
@@ -28,75 +28,75 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - zpo-test
+      - zpam-test
     profiles:
       - ui
 
-  # ZPO test instance 1
-  zpo-test-1:
+  # ZPAM test instance 1
+  zpam-test-1:
     build:
       context: ..
       dockerfile: docker/Dockerfile.test
-    container_name: zpo-test-instance-1
+    container_name: zpam-test-instance-1
     depends_on:
       redis:
         condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379
-      - ZPO_INSTANCE_ID=instance-1
-      - ZPO_CONFIG_PATH=/app/config-redis.yaml
-      - ZPO_LOG_LEVEL=debug
+      - ZPAM_INSTANCE_ID=instance-1
+      - ZPAM_CONFIG_PATH=/app/config-redis.yaml
+      - ZPAM_LOG_LEVEL=debug
     volumes:
       - test_results:/app/test_results
       - test_logs:/app/logs
     networks:
-      - zpo-test
+      - zpam-test
     profiles:
       - test
     command: ["./test_redis_bayes.sh", "unit"]
 
-  # ZPO test instance 2 (for multi-instance testing)
-  zpo-test-2:
+  # ZPAM test instance 2 (for multi-instance testing)
+  zpam-test-2:
     build:
       context: ..
       dockerfile: docker/Dockerfile.test
-    container_name: zpo-test-instance-2
+    container_name: zpam-test-instance-2
     depends_on:
       redis:
         condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379
-      - ZPO_INSTANCE_ID=instance-2
-      - ZPO_CONFIG_PATH=/app/config-redis.yaml
-      - ZPO_LOG_LEVEL=debug
+      - ZPAM_INSTANCE_ID=instance-2
+      - ZPAM_CONFIG_PATH=/app/config-redis.yaml
+      - ZPAM_LOG_LEVEL=debug
     volumes:
       - test_results:/app/test_results
       - test_logs:/app/logs
     networks:
-      - zpo-test
+      - zpam-test
     profiles:
       - test
     command: ["./test_redis_bayes.sh", "integration"]
 
   # Performance testing instance
-  zpo-perf-test:
+  zpam-perf-test:
     build:
       context: ..
       dockerfile: docker/Dockerfile.test
-    container_name: zpo-perf-test
+    container_name: zpam-perf-test
     depends_on:
       redis:
         condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379
-      - ZPO_INSTANCE_ID=perf-test
-      - ZPO_CONFIG_PATH=/app/config-redis.yaml
-      - ZPO_LOG_LEVEL=info
+      - ZPAM_INSTANCE_ID=perf-test
+      - ZPAM_CONFIG_PATH=/app/config-redis.yaml
+      - ZPAM_LOG_LEVEL=info
     volumes:
       - test_results:/app/test_results
       - test_logs:/app/logs
     networks:
-      - zpo-test
+      - zpam-test
     profiles:
       - perf
     command: ["./test_redis_bayes.sh", "performance"]
@@ -110,5 +110,5 @@ volumes:
     driver: local
 
 networks:
-  zpo-test:
+  zpam-test:
     driver: bridge 

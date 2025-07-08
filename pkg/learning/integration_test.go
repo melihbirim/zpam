@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zpo/spam-filter/pkg/config"
-	"github.com/zpo/spam-filter/pkg/email"
-	"github.com/zpo/spam-filter/pkg/filter"
+	"github.com/zpam/spam-filter/pkg/config"
+	"github.com/zpam/spam-filter/pkg/email"
+	"github.com/zpam/spam-filter/pkg/filter"
 )
 
 // Integration tests for Redis Bayesian filter with full pipeline
@@ -23,7 +23,7 @@ func TestRedisIntegrationFullPipeline(t *testing.T) {
 	cfg.Learning.Enabled = true
 	cfg.Learning.Backend = "redis"
 	cfg.Learning.Redis.RedisURL = "redis://localhost:6379"
-	cfg.Learning.Redis.KeyPrefix = "zpo:integration:test"
+	cfg.Learning.Redis.KeyPrefix = "zpam:integration:test"
 	cfg.Learning.Redis.DatabaseNum = 1
 	cfg.Learning.Redis.MinLearns = 5 // Lower for testing
 	cfg.Learning.Redis.DefaultUser = "testuser"
@@ -199,7 +199,7 @@ func TestRedisIntegrationMultiUser(t *testing.T) {
 	cfg.Learning.Enabled = true
 	cfg.Learning.Backend = "redis"
 	cfg.Learning.Redis.RedisURL = "redis://localhost:6379"
-	cfg.Learning.Redis.KeyPrefix = "zpo:integration:multiuser"
+	cfg.Learning.Redis.KeyPrefix = "zpam:integration:multiuser"
 	cfg.Learning.Redis.DatabaseNum = 1
 	cfg.Learning.Redis.MinLearns = 2 // Lower for testing
 	cfg.Learning.Redis.PerUserStats = true
@@ -301,7 +301,7 @@ func TestRedisIntegrationPersistence(t *testing.T) {
 	cfg.Learning.Enabled = true
 	cfg.Learning.Backend = "redis"
 	cfg.Learning.Redis.RedisURL = "redis://localhost:6379"
-	cfg.Learning.Redis.KeyPrefix = "zpo:integration:persistence"
+	cfg.Learning.Redis.KeyPrefix = "zpam:integration:persistence"
 	cfg.Learning.Redis.DatabaseNum = 1
 	cfg.Learning.Redis.MinLearns = 1
 
